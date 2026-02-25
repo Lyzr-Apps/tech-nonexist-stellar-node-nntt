@@ -1,0 +1,82 @@
+{
+  "agent_name": "Idea Validator Agent",
+  "agent_id": "699e8a149496219797ea6bb2",
+  "description": "Analyzes the user's idea against research findings to produce a novelty assessment, feasibility score, recommended tech stack, key challenges, and a phased implementation roadmap.",
+  "agent_type": "json",
+  "accessor": "result",
+  "auto_generated": true,
+  "response_schema": {
+    "idea_summary": "string",
+    "novelty_score": "number",
+    "novelty_reasoning": "string",
+    "feasibility_score": "number",
+    "feasibility_reasoning": "string",
+    "tech_stack": [
+      {
+        "technology": "string",
+        "purpose": "string",
+        "justification": "string",
+        "category": "string"
+      }
+    ],
+    "key_challenges": [
+      {
+        "challenge": "string",
+        "severity": "string",
+        "mitigation": "string"
+      }
+    ],
+    "implementation_roadmap": [
+      {
+        "phase": "string",
+        "title": "string",
+        "duration": "string",
+        "milestones": [
+          "string"
+        ],
+        "deliverables": [
+          "string"
+        ]
+      }
+    ],
+    "overall_assessment": "string",
+    "market_opportunity": "string"
+  },
+  "example_response": {
+    "idea_summary": "sample string",
+    "novelty_score": 0,
+    "novelty_reasoning": "sample string",
+    "feasibility_score": 0,
+    "feasibility_reasoning": "sample string",
+    "tech_stack": [
+      {
+        "technology": "sample string",
+        "purpose": "sample string",
+        "justification": "sample string",
+        "category": "sample string"
+      }
+    ],
+    "key_challenges": [
+      {
+        "challenge": "sample string",
+        "severity": "sample string",
+        "mitigation": "sample string"
+      }
+    ],
+    "implementation_roadmap": [
+      {
+        "phase": "sample string",
+        "title": "sample string",
+        "duration": "sample string",
+        "milestones": [
+          "sample string"
+        ],
+        "deliverables": [
+          "sample string"
+        ]
+      }
+    ],
+    "overall_assessment": "sample string",
+    "market_opportunity": "sample string"
+  }
+}

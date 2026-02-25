@@ -1,0 +1,140 @@
+{
+  "agent_name": "Tech Innovation Manager",
+  "agent_id": "699e8a2fa3d2e42e6173b394",
+  "description": "Coordinates research and validation sub-agents, routes the user's domain/idea query, and aggregates results into a unified Innovation Report with gaps, opportunities, and feasibility breakdown.",
+  "agent_type": "json",
+  "accessor": "result",
+  "auto_generated": true,
+  "response_schema": {
+    "executive_summary": "string",
+    "domain_analyzed": "string",
+    "focus_areas": [
+      "string"
+    ],
+    "existing_solutions": [
+      {
+        "name": "string",
+        "description": "string",
+        "url": "string",
+        "category": "string"
+      }
+    ],
+    "emerging_trends": [
+      {
+        "trend": "string",
+        "evidence": "string",
+        "impact_level": "string"
+      }
+    ],
+    "identified_gaps": [
+      {
+        "gap": "string",
+        "opportunity": "string",
+        "difficulty": "string"
+      }
+    ],
+    "novelty_score": "number",
+    "novelty_reasoning": "string",
+    "feasibility_score": "number",
+    "feasibility_reasoning": "string",
+    "tech_stack": [
+      {
+        "technology": "string",
+        "purpose": "string",
+        "justification": "string",
+        "category": "string"
+      }
+    ],
+    "key_challenges": [
+      {
+        "challenge": "string",
+        "severity": "string",
+        "mitigation": "string"
+      }
+    ],
+    "implementation_roadmap": [
+      {
+        "phase": "string",
+        "title": "string",
+        "duration": "string",
+        "milestones": [
+          "string"
+        ],
+        "deliverables": [
+          "string"
+        ]
+      }
+    ],
+    "overall_assessment": "string",
+    "market_opportunity": "string",
+    "next_steps": [
+      "string"
+    ]
+  },
+  "example_response": {
+    "executive_summary": "sample string",
+    "domain_analyzed": "sample string",
+    "focus_areas": [
+      "sample string"
+    ],
+    "existing_solutions": [
+      {
+        "name": "sample string",
+        "description": "sample string",
+        "url": "sample string",
+        "category": "sample string"
+      }
+    ],
+    "emerging_trends": [
+      {
+        "trend": "sample string",
+        "evidence": "sample string",
+        "impact_level": "sample string"
+      }
+    ],
+    "identified_gaps": [
+      {
+        "gap": "sample string",
+        "opportunity": "sample string",
+        "difficulty": "sample string"
+      }
+    ],
+    "novelty_score": 0,
+    "novelty_reasoning": "sample string",
+    "feasibility_score": 0,
+    "feasibility_reasoning": "sample string",
+    "tech_stack": [
+      {
+        "technology": "sample string",
+        "purpose": "sample string",
+        "justification": "sample string",
+        "category": "sample string"
+      }
+    ],
+    "key_challenges": [
+      {
+        "challenge": "sample string",
+        "severity": "sample string",
+        "mitigation": "sample string"
+      }
+    ],
+    "implementation_roadmap": [
+      {
+        "phase": "sample string",
+        "title": "sample string",
+        "duration": "sample string",
+        "milestones": [
+          "sample string"
+        ],
+        "deliverables": [
+          "sample string"
+        ]
+      }
+    ],
+    "overall_assessment": "sample string",
+    "market_opportunity": "sample string",
+    "next_steps": [
+      "sample string"
+    ]
+  }
+}

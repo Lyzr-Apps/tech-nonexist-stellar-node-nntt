@@ -1,0 +1,84 @@
+{
+  "agent_name": "Tech Research Agent",
+  "agent_id": "699e8a149496219797ea6bb0",
+  "description": "Searches the internet for existing solutions, emerging technologies, recent papers, trending tools, and identified gaps in the user's specified technical domain using Perplexity's built-in web search.",
+  "agent_type": "json",
+  "accessor": "result",
+  "auto_generated": true,
+  "response_schema": {
+    "domain_analyzed": "string",
+    "existing_solutions": [
+      {
+        "name": "string",
+        "description": "string",
+        "url": "string",
+        "category": "string"
+      }
+    ],
+    "emerging_trends": [
+      {
+        "trend": "string",
+        "evidence": "string",
+        "impact_level": "string"
+      }
+    ],
+    "identified_gaps": [
+      {
+        "gap": "string",
+        "opportunity": "string",
+        "difficulty": "string"
+      }
+    ],
+    "key_players": [
+      {
+        "name": "string",
+        "focus": "string"
+      }
+    ],
+    "recent_developments": [
+      {
+        "title": "string",
+        "summary": "string",
+        "date": "string"
+      }
+    ]
+  },
+  "example_response": {
+    "domain_analyzed": "sample string",
+    "existing_solutions": [
+      {
+        "name": "sample string",
+        "description": "sample string",
+        "url": "sample string",
+        "category": "sample string"
+      }
+    ],
+    "emerging_trends": [
+      {
+        "trend": "sample string",
+        "evidence": "sample string",
+        "impact_level": "sample string"
+      }
+    ],
+    "identified_gaps": [
+      {
+        "gap": "sample string",
+        "opportunity": "sample string",
+        "difficulty": "sample string"
+      }
+    ],
+    "key_players": [
+      {
+        "name": "sample string",
+        "focus": "sample string"
+      }
+    ],
+    "recent_developments": [
+      {
+        "title": "sample string",
+        "summary": "sample string",
+        "date": "sample string"
+      }
+    ]
+  }
+}

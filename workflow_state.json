@@ -6,16 +6,19 @@
       "agent_id": "699e8d1dafdc74dd12d77e27",
       "agent_name": "Video Ad Generator",
       "agent_type": "json",
-      "capabilities": ["text"],
+      "capabilities": ["text", "image"],
       "model": "gpt-4.1",
       "provider": "openai",
       "temperature": 0.7,
       "top_p": 0.95,
       "has_tools": false,
       "has_knowledge_base": false,
-      "has_image_output": false,
+      "has_image_output": true,
       "has_voice": false,
       "has_file_output": false,
+      "image_output_config": {
+        "model": "dall-e-3"
+      },
       "response_schema_file": "response_schemas/video_ad_generator_response.json"
     }
   ],

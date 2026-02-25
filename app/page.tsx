@@ -18,7 +18,7 @@ import {
   FiTrash2, FiAlertCircle, FiClock, FiMusic, FiMic, FiType, FiSun,
   FiEye, FiArrowRight, FiHash, FiCopy, FiCheck, FiMessageCircle,
   FiFileText, FiSearch, FiSmartphone, FiMonitor, FiGrid,
-  FiChevronRight, FiActivity
+  FiChevronRight, FiActivity, FiDownload, FiImage
 } from 'react-icons/fi'
 
 // ============================================================
@@ -145,6 +145,7 @@ interface SavedAd {
   duration: string
   adStyle: string
   conceptSummary: string
+  generatedImages: string[]
   fullData: AdConceptData
   createdAt: string
 }
@@ -273,6 +274,8 @@ const SAMPLE_AD: AdConceptData = {
   ],
 }
 
+const SAMPLE_IMAGES: string[] = []
+
 // ============================================================
 // Helper Functions
 // ============================================================
@@ -371,7 +374,7 @@ function CopyButton({ text, label }: { text: string; label?: string }) {
       className="border-border text-foreground hover:bg-muted shrink-0"
     >
       {copied ? (
-        <><FiCheck className="w-3.5 h-3.5 mr-1 text-green-400" />{label ? 'Copied!' : 'Copied!'}</>
+        <><FiCheck className="w-3.5 h-3.5 mr-1 text-green-400" />Copied!</>
       ) : (
         <><FiCopy className="w-3.5 h-3.5 mr-1" />{label ?? 'Copy'}</>
       )}
@@ -446,7 +449,7 @@ function SkeletonLoader() {
         <CardContent className="p-6 space-y-4">
           <div className="flex items-center gap-3">
             <FiActivity className="w-5 h-5 text-primary animate-spin" />
-            <span className="text-sm text-muted-foreground">Crafting your video ad concept</span>
+            <span className="text-sm text-muted-foreground">Generating your ad concept & storyboard visuals...</span>
             <span className="text-sm text-muted-foreground animate-pulse">...</span>
           </div>
           <Skeleton className="h-6 w-2/3 bg-muted" />
@@ -459,6 +462,18 @@ function SkeletonLoader() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Image generation skeleton */}
+      <Card className="bg-card border-2 border-purple-500/20 overflow-hidden">
+        <CardContent className="p-6 space-y-4">
+          <div className="flex items-center gap-3">
+            <FiImage className="w-5 h-5 text-primary animate-pulse" />
+            <span className="text-sm text-muted-foreground">Generating storyboard visuals with DALL-E 3...</span>
+          </div>
+          <Skeleton className="h-64 sm:h-80 w-full bg-muted rounded-xl" />
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {[1, 2].map(n => (
           <Card key={n} className="bg-card border-border">
@@ -486,6 +501,104 @@ function SkeletonLoader() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+function StoryboardImageHero({ images }: { images: string[] }) {
+  const [failedImages, setFailedImages] = useState<Set<number>>(new Set())
+
+  if (!Array.isArray(images) || images.length === 0) return null
+
+  const validImages = images.filter((_, idx) => !failedImages.has(idx))
+  if (validImages.length === 0 && images.length > 0) {
+    return (
+      <Card className="bg-card border-2 border-purple-500/20 overflow-hidden">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center shrink-0">
+              <FiImage className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-bold text-foreground text-lg">Generated Storyboard Visual</h3>
+              <p className="text-xs text-muted-foreground">Generated with DALL-E 3</p>
+            </div>
+          </div>
+          <div className="flex items-center justify-center h-48 bg-secondary/60 rounded-xl border border-border">
+            <div className="text-center">
+              <FiImage className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">Image unavailable</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <Card className="bg-card border-2 border-purple-500/30 overflow-hidden shadow-2xl shadow-purple-500/10">
+      <div className="h-1 bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-400" />
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center shrink-0">
+              <FiImage className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-bold text-foreground text-lg">Generated Storyboard Visual</h3>
+              <p className="text-xs text-muted-foreground">Generated with DALL-E 3</p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            className="border-border text-foreground hover:bg-muted"
+            onClick={() => {
+              if (images[0]) {
+                window.open(images[0], '_blank')
+              }
+            }}
+          >
+            <FiDownload className="w-4 h-4 mr-1.5" />Download
+          </Button>
+        </div>
+
+        <div className={`grid gap-4 ${images.length > 1 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
+          {images.map((url, idx) => {
+            if (failedImages.has(idx)) return null
+            return (
+              <div key={idx} className="relative rounded-xl overflow-hidden border-2 border-purple-500/30 shadow-2xl shadow-purple-500/15 group">
+                <img
+                  src={url}
+                  alt={`Storyboard frame ${idx + 1}`}
+                  className="w-full h-auto object-cover rounded-xl transition-transform duration-500 group-hover:scale-[1.02]"
+                  loading="lazy"
+                  onError={() => {
+                    setFailedImages(prev => {
+                      const next = new Set(prev)
+                      next.add(idx)
+                      return next
+                    })
+                  }}
+                />
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-white text-sm font-medium">
+                      {images.length > 1 ? `Storyboard Frame ${idx + 1}` : 'AI-Generated Hero Scene'}
+                    </span>
+                    <button
+                      onClick={() => window.open(url, '_blank')}
+                      className="text-white/80 hover:text-white transition-colors"
+                    >
+                      <FiDownload className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -768,8 +881,9 @@ function ProductionNotesCard({ data }: { data: ProductionNotesData | null }) {
   )
 }
 
-function AdConceptDisplay({ data, onSave, onNewBrief, saveMessage }: {
+function AdConceptDisplay({ data, images, onSave, onNewBrief, saveMessage }: {
   data: AdConceptData
+  images: string[]
   onSave: () => void
   onNewBrief: () => void
   saveMessage: string
@@ -780,6 +894,7 @@ function AdConceptDisplay({ data, onSave, onNewBrief, saveMessage }: {
   const musicAndSound = data?.music_and_sound && typeof data.music_and_sound === 'object' ? data.music_and_sound : null
   const callToAction = data?.call_to_action && typeof data.call_to_action === 'object' ? data.call_to_action : null
   const productionNotes = data?.production_notes && typeof data.production_notes === 'object' ? data.production_notes : null
+  const safeImages = Array.isArray(images) ? images : []
 
   return (
     <div className="space-y-4">
@@ -833,6 +948,16 @@ function AdConceptDisplay({ data, onSave, onNewBrief, saveMessage }: {
             {data?.full_voiceover_script && (
               <CopyButton text={data.full_voiceover_script} label="Copy Script" />
             )}
+            {safeImages.length > 0 && safeImages[0] && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-border text-foreground hover:bg-muted"
+                onClick={() => window.open(safeImages[0], '_blank')}
+              >
+                <FiDownload className="w-3.5 h-3.5 mr-1" />Download Image
+              </Button>
+            )}
             {saveMessage && (
               <span className="text-sm text-green-400 flex items-center gap-1">
                 <FiCheck className="w-4 h-4" />{saveMessage}
@@ -841,6 +966,9 @@ function AdConceptDisplay({ data, onSave, onNewBrief, saveMessage }: {
           </div>
         </CardContent>
       </Card>
+
+      {/* HERO IMAGE SECTION - Always visible when images exist */}
+      <StoryboardImageHero images={safeImages} />
 
       {/* Accordion Sections */}
       <Accordion type="multiple" defaultValue={['hook', 'storyboard', 'music', 'cta']} className="space-y-2">
@@ -867,7 +995,7 @@ function AdConceptDisplay({ data, onSave, onNewBrief, saveMessage }: {
         <AccordionItem value="storyboard" className="bg-card border border-border rounded-xl overflow-hidden">
           <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted/30">
             <div className="flex items-center gap-3 text-foreground">
-              <FiLayout className="w-5 h-5 text-cyan-400" />
+              <FiGrid className="w-5 h-5 text-cyan-400" />
               <span className="font-semibold">Scene-by-Scene Storyboard</span>
               <Badge variant="secondary" className="bg-secondary text-muted-foreground ml-1">{scenes.length} scenes</Badge>
             </div>
@@ -999,12 +1127,33 @@ function SavedAdCard({ ad, onDelete, onExpand, expanded }: {
   expanded: boolean
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const savedImages = Array.isArray(ad?.generatedImages) ? ad.generatedImages : []
 
   return (
     <Card className="bg-card border-border overflow-hidden">
       <CardContent className="p-0">
         <button onClick={onExpand} className="w-full text-left p-5 hover:bg-muted/20 transition-colors">
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3">
+            {/* Thumbnail */}
+            {savedImages.length > 0 && savedImages[0] ? (
+              <div className="w-16 h-16 rounded-lg overflow-hidden border border-purple-500/30 shrink-0">
+                <img
+                  src={savedImages[0]}
+                  alt="Ad thumbnail"
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement
+                    target.style.display = 'none'
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="w-16 h-16 rounded-lg bg-secondary border border-border flex items-center justify-center shrink-0">
+                <FiFilm className="w-6 h-6 text-muted-foreground" />
+              </div>
+            )}
+
             <div className="flex-1 min-w-0">
               <h3 className="font-semibold text-foreground truncate">{ad.adTitle || ad.productName || 'Untitled Ad'}</h3>
               <div className="flex flex-wrap items-center gap-2 mt-2">
@@ -1016,6 +1165,11 @@ function SavedAdCard({ ad, onDelete, onExpand, expanded }: {
                 )}
                 {ad.adStyle && (
                   <Badge className="text-xs bg-orange-500/20 text-orange-400 border-orange-500/30">{ad.adStyle}</Badge>
+                )}
+                {savedImages.length > 0 && (
+                  <Badge className="text-xs bg-pink-500/20 text-pink-400 border-pink-500/30">
+                    <FiImage className="w-3 h-3 mr-1" />{savedImages.length} image{savedImages.length > 1 ? 's' : ''}
+                  </Badge>
                 )}
                 <span className="text-xs text-muted-foreground">
                   <FiClock className="inline w-3 h-3 mr-1" />
@@ -1032,6 +1186,7 @@ function SavedAdCard({ ad, onDelete, onExpand, expanded }: {
           <div className="border-t border-border p-5">
             <AdConceptDisplay
               data={ad.fullData}
+              images={savedImages}
               onSave={() => {}}
               onNewBrief={() => {}}
               saveMessage=""
@@ -1117,6 +1272,7 @@ export default function Page() {
   // Agent state
   const [loading, setLoading] = useState(false)
   const [adConcept, setAdConcept] = useState<AdConceptData | null>(null)
+  const [generatedImages, setGeneratedImages] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
   const [saveMessage, setSaveMessage] = useState('')
   const [activeAgentId, setActiveAgentId] = useState<string | null>(null)
@@ -1143,6 +1299,7 @@ export default function Page() {
     if (showSample) {
       setFormData(SAMPLE_FORM)
       setAdConcept(SAMPLE_AD)
+      setGeneratedImages(SAMPLE_IMAGES)
       setError(null)
       setValidationErrors({})
     } else {
@@ -1156,6 +1313,7 @@ export default function Page() {
         additionalNotes: '',
       })
       setAdConcept(null)
+      setGeneratedImages([])
       setError(null)
       setValidationErrors({})
     }
@@ -1190,6 +1348,7 @@ export default function Page() {
     setLoading(true)
     setError(null)
     setAdConcept(null)
+    setGeneratedImages([])
     setActiveAgentId(AGENT_ID)
 
     try {
@@ -1203,11 +1362,12 @@ Ad Style: ${formData.adStyle}
 Duration: ${formData.duration}
 ${formData.additionalNotes.trim() ? `Additional Notes: ${formData.additionalNotes}` : ''}
 
-Please create a complete, production-ready video ad concept with detailed scenes, visual directions, voiceover script, music/sound design, call-to-action strategy, and production notes.`
+Please create a complete, production-ready video ad concept with detailed scenes, visual directions, voiceover script, music/sound design, call-to-action strategy, production notes, AND generate a compelling storyboard visualization image for the hero scene.`
 
       const result = await callAIAgent(message, AGENT_ID)
 
       if (result.success && result.response) {
+        // Parse text/JSON data
         let data = result?.response?.result
         if (typeof data === 'string') {
           try { data = JSON.parse(data) } catch {
@@ -1216,12 +1376,25 @@ Please create a complete, production-ready video ad concept with detailed scenes
         }
         if (data && typeof data === 'object') {
           setAdConcept(data as AdConceptData)
-          setTimeout(() => {
-            resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-          }, 200)
         } else {
           setError('Received an unexpected response format. Please try again.')
         }
+
+        // Extract generated images from module_outputs (TOP LEVEL of result)
+        const images: string[] = []
+        const artifactFiles = result.module_outputs?.artifact_files
+        if (Array.isArray(artifactFiles)) {
+          artifactFiles.forEach((file: any) => {
+            if (file?.file_url) {
+              images.push(file.file_url)
+            }
+          })
+        }
+        setGeneratedImages(images)
+
+        setTimeout(() => {
+          resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }, 200)
       } else {
         setError(result?.error ?? 'Failed to generate ad concept. Please try again.')
       }
@@ -1244,6 +1417,7 @@ Please create a complete, production-ready video ad concept with detailed scenes
       duration: adConcept?.duration ?? formData.duration,
       adStyle: adConcept?.ad_style ?? formData.adStyle,
       conceptSummary: adConcept?.concept_summary ?? '',
+      generatedImages: Array.isArray(generatedImages) ? [...generatedImages] : [],
       fullData: adConcept,
       createdAt: new Date().toISOString(),
     }
@@ -1254,7 +1428,7 @@ Please create a complete, production-ready video ad concept with detailed scenes
 
     setSaveMessage('Ad concept saved!')
     setTimeout(() => setSaveMessage(''), 3000)
-  }, [adConcept, formData, savedAds])
+  }, [adConcept, formData, savedAds, generatedImages])
 
   const handleNewBrief = useCallback(() => {
     setFormData({
@@ -1267,6 +1441,7 @@ Please create a complete, production-ready video ad concept with detailed scenes
       additionalNotes: '',
     })
     setAdConcept(null)
+    setGeneratedImages([])
     setError(null)
     setValidationErrors({})
     setShowSample(false)
@@ -1301,7 +1476,7 @@ Please create a complete, production-ready video ad concept with detailed scenes
 
   return (
     <ErrorBoundary>
-      <div style={THEME_VARS} className="min-h-screen bg-background text-foreground font-sans" >
+      <div style={THEME_VARS} className="min-h-screen bg-background text-foreground font-sans">
         {/* Navigation Bar */}
         <nav className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
@@ -1352,10 +1527,10 @@ Please create a complete, production-ready video ad concept with detailed scenes
               {!adConcept && !loading && (
                 <div className="text-center py-6">
                   <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight mb-3" style={{ letterSpacing: '-0.02em' }}>
-                    Generate Video Ad Concepts in Seconds
+                    Generate Video Ad Concepts with AI Visuals
                   </h1>
                   <p className="text-muted-foreground text-base max-w-2xl mx-auto leading-relaxed">
-                    AI-powered creative director that crafts production-ready video advertisement scripts, storyboards, and strategies
+                    AI-powered creative director that crafts production-ready video ad scripts with DALL-E generated storyboard images
                   </p>
                 </div>
               )}
@@ -1561,6 +1736,7 @@ Please create a complete, production-ready video ad concept with detailed scenes
                 <div ref={resultRef}>
                   <AdConceptDisplay
                     data={adConcept}
+                    images={generatedImages}
                     onSave={handleSaveAd}
                     onNewBrief={handleNewBrief}
                     saveMessage={saveMessage}
@@ -1649,7 +1825,7 @@ Please create a complete, production-ready video ad concept with detailed scenes
                 <span className={`w-2 h-2 rounded-full ${activeAgentId === AGENT_ID ? 'bg-green-400 animate-pulse' : 'bg-muted-foreground/40'}`} />
                 <span>Video Ad Generator Agent</span>
                 <span className="text-muted-foreground/40">|</span>
-                <span className="opacity-60">generates production-ready video ad concepts</span>
+                <span className="opacity-60">generates production-ready video ad concepts with DALL-E 3 storyboard visuals</span>
               </div>
             </div>
           </div>

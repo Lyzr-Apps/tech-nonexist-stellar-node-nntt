@@ -1,7 +1,7 @@
 {
   "agent_name": "Video Ad Generator",
   "agent_id": "699e8d1dafdc74dd12d77e27",
-  "description": "AI-powered video advertisement creative director that generates comprehensive, production-ready video ad concepts including multi-scene scripts, storyboard descriptions, voiceover text, visual directions, music/sound suggestions, and call-to-action strategies.",
+  "description": "AI-powered video advertisement creative director that generates comprehensive video ad concepts with visual storyboard images. Produces production-ready scripts, scene breakdowns, voiceover text, visual directions, music/sound suggestions, call-to-action strategies, AND a generated storyboard visualization image for the key hero scene.",
   "agent_type": "json",
   "accessor": "result",
   "auto_generated": true,
@@ -126,10 +126,11 @@
     ]
   },
   "has_module_outputs": true,
+  "module_outputs_note": "Generated storyboard images are returned via module_outputs.artifact_files. Each artifact_file contains a file_url pointing to the DALL-E 3 generated image.",
   "module_outputs_example": {
     "artifact_files": [
       {
-        "file_url": "https://example.com/image.png"
+        "file_url": "https://example.com/storyboard-image.png"
       }
     ]
   }

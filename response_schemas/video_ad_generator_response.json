@@ -1,0 +1,136 @@
+{
+  "agent_name": "Video Ad Generator",
+  "agent_id": "699e8d1dafdc74dd12d77e27",
+  "description": "AI-powered video advertisement creative director that generates comprehensive, production-ready video ad concepts including multi-scene scripts, storyboard descriptions, voiceover text, visual directions, music/sound suggestions, and call-to-action strategies.",
+  "agent_type": "json",
+  "accessor": "result",
+  "auto_generated": true,
+  "response_schema": {
+    "ad_title": "string",
+    "concept_summary": "string",
+    "platform": "string",
+    "duration": "string",
+    "aspect_ratio": "string",
+    "target_audience": "string",
+    "ad_style": "string",
+    "hook": {
+      "description": "string",
+      "duration_seconds": "number",
+      "visual_direction": "string",
+      "text_overlay": "string"
+    },
+    "scenes": [
+      {
+        "scene_number": "number",
+        "title": "string",
+        "duration_seconds": "number",
+        "setting": "string",
+        "visual_direction": "string",
+        "camera_movement": "string",
+        "lighting": "string",
+        "voiceover": "string",
+        "on_screen_text": "string",
+        "transition": "string"
+      }
+    ],
+    "music_and_sound": {
+      "genre": "string",
+      "mood": "string",
+      "tempo": "string",
+      "sound_effects": [
+        {
+          "effect": "string",
+          "timing": "string"
+        }
+      ],
+      "energy_curve": "string"
+    },
+    "call_to_action": {
+      "primary_cta": "string",
+      "secondary_cta": "string",
+      "cta_timing": "string",
+      "urgency_element": "string",
+      "placement": "string"
+    },
+    "production_notes": {
+      "budget_range": "string",
+      "talent_needed": "string",
+      "props_and_locations": "string",
+      "platform_tips": "string",
+      "post_production": "string"
+    },
+    "creative_rationale": "string",
+    "full_voiceover_script": "string",
+    "hashtag_suggestions": [
+      "string"
+    ]
+  },
+  "example_response": {
+    "ad_title": "sample string",
+    "concept_summary": "sample string",
+    "platform": "sample string",
+    "duration": "sample string",
+    "aspect_ratio": "sample string",
+    "target_audience": "sample string",
+    "ad_style": "sample string",
+    "hook": {
+      "description": "sample string",
+      "duration_seconds": 0,
+      "visual_direction": "sample string",
+      "text_overlay": "sample string"
+    },
+    "scenes": [
+      {
+        "scene_number": 0,
+        "title": "sample string",
+        "duration_seconds": 0,
+        "setting": "sample string",
+        "visual_direction": "sample string",
+        "camera_movement": "sample string",
+        "lighting": "sample string",
+        "voiceover": "sample string",
+        "on_screen_text": "sample string",
+        "transition": "sample string"
+      }
+    ],
+    "music_and_sound": {
+      "genre": "sample string",
+      "mood": "sample string",
+      "tempo": "sample string",
+      "sound_effects": [
+        {
+          "effect": "sample string",
+          "timing": "sample string"
+        }
+      ],
+      "energy_curve": "sample string"
+    },
+    "call_to_action": {
+      "primary_cta": "sample string",
+      "secondary_cta": "sample string",
+      "cta_timing": "sample string",
+      "urgency_element": "sample string",
+      "placement": "sample string"
+    },
+    "production_notes": {
+      "budget_range": "sample string",
+      "talent_needed": "sample string",
+      "props_and_locations": "sample string",
+      "platform_tips": "sample string",
+      "post_production": "sample string"
+    },
+    "creative_rationale": "sample string",
+    "full_voiceover_script": "sample string",
+    "hashtag_suggestions": [
+      "sample string"
+    ]
+  },
+  "has_module_outputs": true,
+  "module_outputs_example": {
+    "artifact_files": [
+      {
+        "file_url": "https://example.com/image.png"
+      }
+    ]
+  }
+}

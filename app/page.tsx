@@ -1,8 +1,8 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { callAIAgent } from '@/lib/aiAgent'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -12,19 +12,20 @@ import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import {
-  FiCpu, FiSearch, FiZap, FiFileText, FiGrid, FiTarget, FiAward,
-  FiCheckCircle, FiTrendingUp, FiLayers, FiAlertTriangle, FiMap,
-  FiArrowRight, FiSave, FiRefreshCw, FiTrash2, FiCompass,
-  FiAlertCircle, FiChevronRight, FiClock, FiExternalLink,
-  FiActivity, FiStar, FiBookOpen
+  FiFilm, FiVideo, FiZap, FiLayout, FiTarget, FiSave, FiRefreshCw,
+  FiTrash2, FiAlertCircle, FiClock, FiMusic, FiMic, FiType, FiSun,
+  FiEye, FiArrowRight, FiHash, FiCopy, FiCheck, FiMessageCircle,
+  FiFileText, FiSearch, FiSmartphone, FiMonitor, FiGrid,
+  FiChevronRight, FiActivity
 } from 'react-icons/fi'
 
 // ============================================================
-// Constants
+// Constants & Types
 // ============================================================
 
-const MANAGER_AGENT_ID = '699e8a2fa3d2e42e6173b394'
+const AGENT_ID = '699e8d1dafdc74dd12d77e27'
 
 const THEME_VARS = {
   '--background': '231 18% 14%',
@@ -51,140 +52,225 @@ const THEME_VARS = {
   '--radius': '0.875rem',
 } as React.CSSProperties
 
-const FOCUS_TAGS = [
-  'AI/ML', 'IoT', 'Blockchain', 'DevTools', 'Cloud',
-  'Security', 'Web3', 'AR/VR', 'Edge Computing', 'Quantum', 'Robotics'
+const STORAGE_KEY = 'advision_saved_ads'
+
+const PLATFORMS = [
+  { label: 'TikTok/Reels', icon: 'smartphone' },
+  { label: 'YouTube', icon: 'video' },
+  { label: 'Instagram Feed', icon: 'grid' },
+  { label: 'Facebook', icon: 'monitor' },
+  { label: 'LinkedIn', icon: 'layout' },
+  { label: 'TV/OTT', icon: 'film' },
 ]
 
-const STORAGE_KEY = 'technova_history'
+const AD_STYLES = [
+  'Emotional', 'Humorous', 'Educational', 'Cinematic',
+  'Testimonial', 'Fast-Paced', 'Minimalist', 'Storytelling'
+]
 
-// ============================================================
-// Types
-// ============================================================
+const AD_DURATIONS = ['15s', '30s', '60s', '90s', '2min+']
 
-interface ExistingSolution {
-  name?: string
+interface HookData {
   description?: string
-  url?: string
-  category?: string
+  duration_seconds?: number
+  visual_direction?: string
+  text_overlay?: string
 }
 
-interface EmergingTrend {
-  trend?: string
-  evidence?: string
-  impact_level?: string
-}
-
-interface IdentifiedGap {
-  gap?: string
-  opportunity?: string
-  difficulty?: string
-}
-
-interface TechStackItem {
-  technology?: string
-  purpose?: string
-  justification?: string
-  category?: string
-}
-
-interface KeyChallenge {
-  challenge?: string
-  severity?: string
-  mitigation?: string
-}
-
-interface RoadmapPhase {
-  phase?: string
+interface SceneData {
+  scene_number?: number
   title?: string
+  duration_seconds?: number
+  setting?: string
+  visual_direction?: string
+  camera_movement?: string
+  lighting?: string
+  voiceover?: string
+  on_screen_text?: string
+  transition?: string
+}
+
+interface SoundEffectData {
+  effect?: string
+  timing?: string
+}
+
+interface MusicSoundData {
+  genre?: string
+  mood?: string
+  tempo?: string
+  sound_effects?: SoundEffectData[]
+  energy_curve?: string
+}
+
+interface CTAData {
+  primary_cta?: string
+  secondary_cta?: string
+  cta_timing?: string
+  urgency_element?: string
+  placement?: string
+}
+
+interface ProductionNotesData {
+  budget_range?: string
+  talent_needed?: string
+  props_and_locations?: string
+  platform_tips?: string
+  post_production?: string
+}
+
+interface AdConceptData {
+  ad_title?: string
+  concept_summary?: string
+  platform?: string
   duration?: string
-  milestones?: string[]
-  deliverables?: string[]
+  aspect_ratio?: string
+  target_audience?: string
+  ad_style?: string
+  hook?: HookData
+  scenes?: SceneData[]
+  music_and_sound?: MusicSoundData
+  call_to_action?: CTAData
+  production_notes?: ProductionNotesData
+  creative_rationale?: string
+  full_voiceover_script?: string
+  hashtag_suggestions?: string[]
 }
 
-interface InnovationReportData {
-  executive_summary?: string
-  domain_analyzed?: string
-  focus_areas?: string[]
-  existing_solutions?: ExistingSolution[]
-  emerging_trends?: EmergingTrend[]
-  identified_gaps?: IdentifiedGap[]
-  novelty_score?: number
-  novelty_reasoning?: string
-  feasibility_score?: number
-  feasibility_reasoning?: string
-  tech_stack?: TechStackItem[]
-  key_challenges?: KeyChallenge[]
-  implementation_roadmap?: RoadmapPhase[]
-  overall_assessment?: string
-  market_opportunity?: string
-  next_steps?: string[]
-}
-
-interface SavedReport {
+interface SavedAd {
   id: string
-  domain: string
-  focusTags: string[]
-  noveltyScore: number
-  feasibilityScore: number
-  executiveSummary: string
-  fullReport: InnovationReportData
+  adTitle: string
+  productName: string
+  platform: string
+  duration: string
+  adStyle: string
+  conceptSummary: string
+  fullData: AdConceptData
   createdAt: string
+}
+
+interface FormData {
+  productName: string
+  productDescription: string
+  targetAudience: string
+  platform: string
+  adStyle: string
+  duration: string
+  additionalNotes: string
 }
 
 // ============================================================
 // Sample Data
 // ============================================================
 
-const SAMPLE_REPORT: InnovationReportData = {
-  executive_summary: "The AI-powered code review space is rapidly evolving with significant opportunities in automated security analysis and context-aware suggestions. While several established players exist, there are notable gaps in real-time collaborative review and cross-language pattern detection that present compelling market opportunities.",
-  domain_analyzed: "AI-Powered Code Review Tools",
-  focus_areas: ["AI/ML", "DevTools", "Security"],
-  existing_solutions: [
-    { name: "CodeRabbit", description: "AI-first code review tool that provides contextual suggestions and automated reviews for pull requests across multiple languages.", url: "https://coderabbit.ai", category: "AI Review" },
-    { name: "Snyk Code", description: "Real-time static analysis powered by machine learning, focusing on security vulnerabilities in code.", url: "https://snyk.io", category: "Security" },
-    { name: "Codacy", description: "Automated code quality and security platform with multi-language support and CI/CD integration.", url: "https://codacy.com", category: "Quality" },
-    { name: "DeepSource", description: "Static analysis platform with AI-powered auto-fix suggestions and continuous monitoring.", url: "https://deepsource.io", category: "Analysis" }
+const SAMPLE_FORM: FormData = {
+  productName: 'Nike Air Max Pulse',
+  productDescription: 'Revolutionary sneakers featuring visible Air cushioning technology. Designed for everyday comfort and street style with sustainable materials and bold colorways.',
+  targetAudience: 'Gen Z sneakerheads and streetwear enthusiasts, 18-28, urban',
+  platform: 'TikTok/Reels',
+  adStyle: 'Fast-Paced',
+  duration: '30s',
+  additionalNotes: 'Focus on the visible air unit and street culture. Include diverse cast.',
+}
+
+const SAMPLE_AD: AdConceptData = {
+  ad_title: 'Air Max Pulse: Feel the Beat',
+  concept_summary: 'A high-energy, music-driven 30-second TikTok/Reels ad that positions the Nike Air Max Pulse as the ultimate street culture sneaker. The concept uses rhythmic editing synchronized to a bass-heavy beat, showcasing the visible Air unit as a visual heartbeat that connects music, movement, and urban energy.',
+  platform: 'TikTok/Reels',
+  duration: '30 seconds',
+  aspect_ratio: '9:16',
+  target_audience: 'Gen Z sneakerheads and streetwear enthusiasts, 18-28, urban',
+  ad_style: 'Fast-Paced',
+  hook: {
+    description: 'Extreme close-up of the Air Max Pulse sole hitting a puddle in slow-motion, sending water rippling outward in sync with a deep bass drop.',
+    duration_seconds: 3,
+    visual_direction: 'Macro lens shot at ground level. The visible Air unit glows with an ethereal light as it impacts. Water droplets freeze mid-air before the tempo kicks in.',
+    text_overlay: 'FEEL THE BEAT',
+  },
+  scenes: [
+    {
+      scene_number: 1,
+      title: 'Urban Awakening',
+      duration_seconds: 5,
+      setting: 'Downtown city block at golden hour, graffiti walls and neon signs',
+      visual_direction: 'Quick-cut montage of diverse feet in Air Max Pulse walking, running, dancing on different urban surfaces. Each step triggers a visual pulse effect.',
+      camera_movement: 'Rapid low-angle tracking shots following feet, whip pans between locations',
+      lighting: 'Golden hour warmth contrasted with neon accent lighting',
+      voiceover: '',
+      on_screen_text: 'EVERY STEP',
+      transition: 'Beat-synced flash cut',
+    },
+    {
+      scene_number: 2,
+      title: 'The Pulse Effect',
+      duration_seconds: 8,
+      setting: 'Rooftop basketball court overlooking city skyline',
+      visual_direction: 'A dancer performs explosive moves, each landing creating a visible shockwave emanating from the Air unit. Color grading shifts with each beat.',
+      camera_movement: 'Circular dolly around dancer, drone pull-back to reveal skyline',
+      lighting: 'Dramatic backlit silhouette transitioning to full color reveal',
+      voiceover: 'When the city moves, you feel every beat.',
+      on_screen_text: 'A PULSE',
+      transition: 'Zoom through Air unit lens',
+    },
+    {
+      scene_number: 3,
+      title: 'Street Culture Montage',
+      duration_seconds: 8,
+      setting: 'Multiple locations: skate park, record store, food truck alley, subway platform',
+      visual_direction: 'Rapid lifestyle montage showing diverse Gen Z cast wearing Air Max Pulse in their element. Each person adds their own rhythm to the visual beat.',
+      camera_movement: 'Handheld energy, snap zooms, Dutch angles for dynamism',
+      lighting: 'Mixed natural and urban artificial lighting for authentic feel',
+      voiceover: 'Your street. Your sound. Your pulse.',
+      on_screen_text: '',
+      transition: 'Rhythmic wipe synced to music',
+    },
+    {
+      scene_number: 4,
+      title: 'Product Hero & CTA',
+      duration_seconds: 6,
+      setting: 'Clean dark studio with dramatic single spotlight',
+      visual_direction: 'Slow-motion 360-degree rotation of the Air Max Pulse with the visible Air unit pulsing like a heartbeat. Shoe transforms through three colorways.',
+      camera_movement: 'Smooth orbital shot tightening to Air unit close-up',
+      lighting: 'Single dramatic spotlight with colored rim lights matching shoe colorways',
+      voiceover: '',
+      on_screen_text: 'NIKE AIR MAX PULSE',
+      transition: 'Final beat drop to black',
+    },
   ],
-  emerging_trends: [
-    { trend: "LLM-Powered Contextual Reviews", evidence: "Major players integrating GPT-4 and Claude for nuanced code understanding beyond pattern matching.", impact_level: "High" },
-    { trend: "Shift-Left Security", evidence: "Growing adoption of pre-commit and IDE-integrated security scanning, reducing vulnerabilities by 60%.", impact_level: "High" },
-    { trend: "Real-time Collaborative AI Review", evidence: "Early-stage startups exploring pair-programming-style AI review during coding, not just at PR time.", impact_level: "Medium" }
+  music_and_sound: {
+    genre: 'Electronic / Lo-fi Hip-Hop Hybrid',
+    mood: 'Energetic, confident, urban, youthful',
+    tempo: '128 BPM with half-time breakdowns',
+    sound_effects: [
+      { effect: 'Deep bass impact', timing: 'Every footstep landing (0:00-0:15)' },
+      { effect: 'Whoosh / air release', timing: 'Air unit close-ups (0:03, 0:18)' },
+      { effect: 'Vinyl scratch', timing: 'Scene transitions (0:08, 0:16)' },
+      { effect: 'Heartbeat pulse', timing: 'Product hero shot (0:24-0:30)' },
+      { effect: 'City ambience layer', timing: 'Throughout at low volume' },
+    ],
+    energy_curve: 'Starts with a dramatic bass drop hook, builds through scenes 1-2, peaks during the street culture montage, then drops to a clean, powerful product hero moment before the final beat.',
+  },
+  call_to_action: {
+    primary_cta: 'Shop Air Max Pulse',
+    secondary_cta: 'Explore All Colorways',
+    cta_timing: 'Final 4 seconds with swipe-up prompt',
+    urgency_element: 'Limited Launch Colorway - Available Now',
+    placement: 'Bottom-center with Nike swoosh animation, swipe-up CTA for TikTok native interaction',
+  },
+  production_notes: {
+    budget_range: '$15,000 - $25,000 (mid-range production)',
+    talent_needed: '4-5 diverse Gen Z talent (dancers, skaters, lifestyle), no speaking roles required, strong movement skills preferred',
+    props_and_locations: 'Air Max Pulse in 3 colorways, urban locations (rooftop, skate park, downtown), studio with backdrop for hero shot, skateboard, boombox, vinyl records for styling',
+    platform_tips: 'Optimize for sound-on viewing (TikTok algorithm favors it). Use trending audio elements. Include closed captions for accessibility. First frame must be visually arresting for autoplay. Vertical 9:16 native format only.',
+    post_production: 'Heavy color grading with Dracula-inspired dark tones. VFX for pulse/shockwave effects on footsteps. Speed ramping between slow-mo and hyper-speed. Beat-synced editing is critical. Add subtle screen shake on impacts.',
+  },
+  creative_rationale: 'This concept leverages the "visible technology" trend in sneaker marketing while adapting it for TikTok\'s fast-paced, music-driven format. By making the Air unit a visual "heartbeat," we create an ownable visual language that connects Nike\'s innovation story to Gen Z\'s music-first culture. The diverse cast and multiple urban settings ensure broad relatability, while the rhythmic editing style mirrors the content Gen Z already consumes and creates on TikTok, making the ad feel native rather than intrusive.',
+  full_voiceover_script: '[0:00-0:03] (No voiceover - pure visual impact with bass drop)\n[0:03-0:08] (No voiceover - visual storytelling with on-screen text)\n[0:08-0:16] "When the city moves, you feel every beat."\n[0:16-0:24] "Your street. Your sound. Your pulse."\n[0:24-0:30] (No voiceover - product hero with on-screen text and CTA)',
+  hashtag_suggestions: [
+    '#AirMaxPulse', '#NikeAirMax', '#FeelTheBeat', '#StreetStyle',
+    '#SneakerHead', '#NikeAd', '#UrbanFashion', '#GenZStyle',
+    '#KickCheck', '#OOTD', '#Sneakers2024'
   ],
-  identified_gaps: [
-    { gap: "Cross-language pattern detection", opportunity: "Build a unified analysis engine that identifies anti-patterns across polyglot codebases", difficulty: "Hard" },
-    { gap: "Team-aware code style enforcement", opportunity: "Learn team-specific patterns and enforce consistency beyond linting rules", difficulty: "Medium" },
-    { gap: "Impact-based review prioritization", opportunity: "Prioritize review comments by blast radius and business criticality", difficulty: "Easy" }
-  ],
-  novelty_score: 7,
-  novelty_reasoning: "While AI code review exists, the combination of cross-language pattern detection with team-aware style learning represents a genuinely novel approach. The impact-based prioritization adds unique value not seen in current tools.",
-  feasibility_score: 8,
-  feasibility_reasoning: "Strong technical feasibility leveraging existing LLM infrastructure and AST parsing libraries. The main challenges are training data acquisition and real-time performance at scale, both of which have proven solutions.",
-  tech_stack: [
-    { technology: "Tree-sitter", purpose: "Multi-language AST parsing", justification: "Industry-standard incremental parser supporting 100+ languages with consistent API", category: "Core" },
-    { technology: "FastAPI + Python", purpose: "Backend analysis service", justification: "Optimal for ML model serving with async support and strong ecosystem", category: "Backend" },
-    { technology: "Claude/GPT-4 API", purpose: "Contextual review generation", justification: "Best-in-class code understanding with instruction following for structured output", category: "AI" },
-    { technology: "Redis + PostgreSQL", purpose: "Caching and persistence", justification: "Redis for real-time analysis caching, PostgreSQL for historical pattern storage", category: "Data" }
-  ],
-  key_challenges: [
-    { challenge: "Latency for real-time reviews", severity: "High", mitigation: "Implement incremental analysis with pre-computed caches and streaming responses" },
-    { challenge: "Training data quality", severity: "Medium", mitigation: "Partner with open-source projects for curated review datasets with expert annotations" },
-    { challenge: "False positive rate", severity: "High", mitigation: "Implement confidence scoring with human-in-the-loop feedback mechanism to improve over time" }
-  ],
-  implementation_roadmap: [
-    { phase: "Phase 1", title: "Foundation", duration: "2-3 months", milestones: ["AST parser integration", "Basic pattern detection", "API scaffolding"], deliverables: ["MVP CLI tool", "Core analysis engine", "API documentation"] },
-    { phase: "Phase 2", title: "AI Integration", duration: "2-3 months", milestones: ["LLM integration", "Contextual review generation", "GitHub/GitLab webhooks"], deliverables: ["PR bot", "Review dashboard", "Team onboarding flow"] },
-    { phase: "Phase 3", title: "Intelligence Layer", duration: "3-4 months", milestones: ["Cross-language patterns", "Team style learning", "Impact scoring"], deliverables: ["Full platform launch", "Enterprise features", "Analytics dashboard"] }
-  ],
-  overall_assessment: "This is a strong opportunity with a clear path to market. The AI code review space is growing rapidly, and the proposed differentiation through cross-language analysis and team-aware intelligence fills genuine gaps. Recommend proceeding with Phase 1 immediately.",
-  market_opportunity: "The global code review tools market is projected to reach $1.2B by 2027, with AI-assisted tools capturing an increasing share. Developer tool spending per engineer averages $2,500/year, with security and quality tools seeing 35% YoY growth.",
-  next_steps: [
-    "Conduct 10 developer interviews to validate pain points around cross-language reviews",
-    "Build proof-of-concept with Tree-sitter for 3 languages (Python, TypeScript, Go)",
-    "Set up LLM evaluation pipeline comparing review quality across models",
-    "Create landing page and waitlist to gauge market interest",
-    "Identify 3-5 open source projects for pilot partnerships"
-  ]
 }
 
 // ============================================================
@@ -216,49 +302,11 @@ function formatInline(text: string) {
   )
 }
 
-function getScoreColor(score: number): string {
-  if (score >= 9) return 'hsl(135 94% 60%)'
-  if (score >= 7) return 'hsl(191 97% 70%)'
-  if (score >= 4) return 'hsl(31 100% 65%)'
-  return 'hsl(0 100% 62%)'
-}
-
-function getScoreLabel(score: number): string {
-  if (score >= 9) return 'Excellent'
-  if (score >= 7) return 'Strong'
-  if (score >= 4) return 'Moderate'
-  return 'Low'
-}
-
-function getDifficultyColor(difficulty: string): string {
-  const d = (difficulty ?? '').toLowerCase()
-  if (d === 'easy') return 'bg-green-500/20 text-green-400 border-green-500/30'
-  if (d === 'medium') return 'bg-orange-500/20 text-orange-400 border-orange-500/30'
-  if (d === 'hard') return 'bg-red-500/20 text-red-400 border-red-500/30'
-  return 'bg-muted text-muted-foreground border-border'
-}
-
-function getSeverityColor(severity: string): string {
-  const s = (severity ?? '').toLowerCase()
-  if (s === 'high') return 'bg-red-500/20 text-red-400 border-red-500/30'
-  if (s === 'medium') return 'bg-orange-500/20 text-orange-400 border-orange-500/30'
-  if (s === 'low') return 'bg-green-500/20 text-green-400 border-green-500/30'
-  return 'bg-muted text-muted-foreground border-border'
-}
-
-function getImpactColor(impact: string): string {
-  const i = (impact ?? '').toLowerCase()
-  if (i === 'high') return 'bg-purple-500/20 text-purple-400 border-purple-500/30'
-  if (i === 'medium') return 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30'
-  if (i === 'low') return 'bg-muted text-muted-foreground border-border'
-  return 'bg-muted text-muted-foreground border-border'
-}
-
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substring(2, 9)
 }
 
-function loadHistory(): SavedReport[] {
+function loadSavedAds(): SavedAd[] {
   if (typeof window === 'undefined') return []
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -270,67 +318,119 @@ function loadHistory(): SavedReport[] {
   }
 }
 
-function saveHistory(reports: SavedReport[]) {
+function saveSavedAds(ads: SavedAd[]) {
   if (typeof window === 'undefined') return
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(reports))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(ads))
   } catch {
-    // storage full or unavailable
+    // storage full
+  }
+}
+
+function getPlatformIcon(icon: string) {
+  switch (icon) {
+    case 'smartphone': return <FiSmartphone className="w-4 h-4" />
+    case 'video': return <FiVideo className="w-4 h-4" />
+    case 'grid': return <FiGrid className="w-4 h-4" />
+    case 'monitor': return <FiMonitor className="w-4 h-4" />
+    case 'layout': return <FiLayout className="w-4 h-4" />
+    case 'film': return <FiFilm className="w-4 h-4" />
+    default: return <FiMonitor className="w-4 h-4" />
   }
 }
 
 // ============================================================
-// Sub-Components (defined before default export)
+// Sub-Components
 // ============================================================
 
-function ScoreGauge({ score, label, reasoning }: { score: number; label: string; reasoning: string }) {
-  const color = getScoreColor(score)
-  const percentage = (score / 10) * 100
-  const circumference = 2 * Math.PI * 45
-  const offset = circumference - (percentage / 100) * circumference
+function CopyButton({ text, label }: { text: string; label?: string }) {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      const textarea = document.createElement('textarea')
+      textarea.value = text
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textarea)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }, [text])
 
   return (
-    <div className="flex flex-col items-center gap-4 p-4">
-      <div className="relative w-32 h-32">
-        <svg className="w-32 h-32 -rotate-90" viewBox="0 0 100 100">
-          <circle cx="50" cy="50" r="45" fill="none" stroke="hsl(232 16% 28%)" strokeWidth="8" />
-          <circle
-            cx="50" cy="50" r="45" fill="none"
-            stroke={color} strokeWidth="8"
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            strokeDashoffset={offset}
-            className="transition-all duration-1000 ease-out"
-          />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-3xl font-bold" style={{ color }}>{score}</span>
-          <span className="text-xs text-muted-foreground">/10</span>
-        </div>
-      </div>
-      <div className="text-center">
-        <Badge className="mb-2" style={{ backgroundColor: color + '33', color, borderColor: color + '55' }}>{getScoreLabel(score)}</Badge>
-        <h4 className="font-semibold text-sm text-foreground mb-1">{label}</h4>
-      </div>
-      {reasoning && (
-        <div className="text-sm text-muted-foreground leading-relaxed">{renderMarkdown(reasoning)}</div>
+    <Button
+      size="sm"
+      variant="outline"
+      onClick={handleCopy}
+      className="border-border text-foreground hover:bg-muted shrink-0"
+    >
+      {copied ? (
+        <><FiCheck className="w-3.5 h-3.5 mr-1 text-green-400" />{label ? 'Copied!' : 'Copied!'}</>
+      ) : (
+        <><FiCopy className="w-3.5 h-3.5 mr-1" />{label ?? 'Copy'}</>
       )}
+    </Button>
+  )
+}
+
+function PlatformSelector({ selected, onSelect }: { selected: string; onSelect: (p: string) => void }) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {PLATFORMS.map((p) => {
+        const isSelected = selected === p.label
+        return (
+          <button
+            key={p.label}
+            onClick={() => onSelect(p.label)}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 border ${isSelected ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/25' : 'bg-secondary text-secondary-foreground border-border hover:bg-muted hover:border-muted-foreground/30'}`}
+          >
+            {getPlatformIcon(p.icon)}
+            {p.label}
+          </button>
+        )
+      })}
     </div>
   )
 }
 
-function FocusTagSelector({ selected, onToggle }: { selected: string[]; onToggle: (tag: string) => void }) {
+function StyleSelector({ selected, onSelect }: { selected: string; onSelect: (s: string) => void }) {
   return (
     <div className="flex flex-wrap gap-2">
-      {FOCUS_TAGS.map((tag) => {
-        const isSelected = selected.includes(tag)
+      {AD_STYLES.map((style) => {
+        const isSelected = selected === style
         return (
           <button
-            key={tag}
-            onClick={() => onToggle(tag)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 border ${isSelected ? 'bg-primary text-primary-foreground border-primary shadow-md shadow-primary/25' : 'bg-secondary text-secondary-foreground border-border hover:bg-muted hover:border-muted-foreground/30'}`}
+            key={style}
+            onClick={() => onSelect(style)}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 border ${isSelected ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/25' : 'bg-secondary text-secondary-foreground border-border hover:bg-muted hover:border-muted-foreground/30'}`}
           >
-            {tag}
+            {style}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+function DurationSelector({ selected, onSelect }: { selected: string; onSelect: (d: string) => void }) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {AD_DURATIONS.map((dur) => {
+        const isSelected = selected === dur
+        return (
+          <button
+            key={dur}
+            onClick={() => onSelect(dur)}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 border ${isSelected ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/25' : 'bg-secondary text-secondary-foreground border-border hover:bg-muted hover:border-muted-foreground/30'}`}
+          >
+            <FiClock className="inline w-3.5 h-3.5 mr-1.5" />
+            {dur}
           </button>
         )
       })}
@@ -341,39 +441,47 @@ function FocusTagSelector({ selected, onToggle }: { selected: string[]; onToggle
 function SkeletonLoader() {
   return (
     <div className="space-y-6 animate-pulse">
-      <Card className="bg-card border-border">
+      <Card className="bg-card border-border overflow-hidden">
+        <div className="h-1.5 bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-400 animate-pulse" />
         <CardContent className="p-6 space-y-4">
           <div className="flex items-center gap-3">
             <FiActivity className="w-5 h-5 text-primary animate-spin" />
-            <span className="text-sm text-muted-foreground">Researching the tech landscape</span>
+            <span className="text-sm text-muted-foreground">Crafting your video ad concept</span>
             <span className="text-sm text-muted-foreground animate-pulse">...</span>
           </div>
-          <Skeleton className="h-4 w-3/4 bg-muted" />
-          <Skeleton className="h-4 w-1/2 bg-muted" />
+          <Skeleton className="h-6 w-2/3 bg-muted" />
+          <Skeleton className="h-4 w-full bg-muted" />
           <Skeleton className="h-4 w-5/6 bg-muted" />
+          <div className="flex gap-2 mt-3">
+            <Skeleton className="h-6 w-20 rounded-full bg-muted" />
+            <Skeleton className="h-6 w-16 rounded-full bg-muted" />
+            <Skeleton className="h-6 w-24 rounded-full bg-muted" />
+          </div>
         </CardContent>
       </Card>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="bg-card border-border">
-          <CardContent className="p-6 space-y-3">
-            <Skeleton className="h-5 w-1/3 bg-muted" />
-            <Skeleton className="h-20 w-full bg-muted" />
-          </CardContent>
-        </Card>
-        <Card className="bg-card border-border">
-          <CardContent className="p-6 space-y-3">
-            <Skeleton className="h-5 w-1/3 bg-muted" />
-            <Skeleton className="h-20 w-full bg-muted" />
-          </CardContent>
-        </Card>
+        {[1, 2].map(n => (
+          <Card key={n} className="bg-card border-border">
+            <CardContent className="p-6 space-y-3">
+              <Skeleton className="h-5 w-1/3 bg-muted" />
+              <Skeleton className="h-24 w-full bg-muted" />
+            </CardContent>
+          </Card>
+        ))}
       </div>
       <Card className="bg-card border-border">
         <CardContent className="p-6 space-y-3">
           <Skeleton className="h-5 w-1/4 bg-muted" />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <Skeleton className="h-24 bg-muted rounded-lg" />
-            <Skeleton className="h-24 bg-muted rounded-lg" />
-            <Skeleton className="h-24 bg-muted rounded-lg" />
+          <div className="space-y-3">
+            {[1, 2, 3].map(n => (
+              <div key={n} className="flex gap-4">
+                <Skeleton className="w-10 h-10 rounded-full bg-muted shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-1/2 bg-muted" />
+                  <Skeleton className="h-16 w-full bg-muted rounded-lg" />
+                </div>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
@@ -381,121 +489,353 @@ function SkeletonLoader() {
   )
 }
 
-function RoadmapTimeline({ phases }: { phases: RoadmapPhase[] }) {
-  const safePhases = Array.isArray(phases) ? phases : []
-  if (safePhases.length === 0) return <p className="text-sm text-muted-foreground">No roadmap data available.</p>
-
+function HookCard({ hook }: { hook: HookData | null }) {
+  if (!hook) return null
   return (
-    <div className="space-y-0">
-      {safePhases.map((phase, idx) => {
-        const milestones = Array.isArray(phase?.milestones) ? phase.milestones : []
-        const deliverables = Array.isArray(phase?.deliverables) ? phase.deliverables : []
-        const isLast = idx === safePhases.length - 1
-
-        return (
-          <div key={idx} className="relative flex gap-4">
-            <div className="flex flex-col items-center">
-              <div className="w-10 h-10 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center text-primary font-bold text-sm shrink-0">
-                {idx + 1}
-              </div>
-              {!isLast && <div className="w-0.5 flex-1 bg-border min-h-[2rem]" />}
-            </div>
-            <div className={`flex-1 pb-6 ${isLast ? '' : ''}`}>
-              <div className="flex flex-wrap items-center gap-2 mb-2">
-                <h4 className="font-semibold text-foreground">{phase?.title ?? phase?.phase ?? 'Untitled Phase'}</h4>
-                {phase?.duration && (
-                  <Badge variant="outline" className="text-xs border-border text-muted-foreground">
-                    <FiClock className="w-3 h-3 mr-1" />{phase.duration}
-                  </Badge>
-                )}
-              </div>
-              {milestones.length > 0 && (
-                <div className="mb-2">
-                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Milestones</span>
-                  <ul className="mt-1 space-y-1">
-                    {milestones.map((m, mi) => (
-                      <li key={mi} className="text-sm text-foreground flex items-start gap-2">
-                        <FiCheckCircle className="w-3.5 h-3.5 text-green-400 mt-0.5 shrink-0" />
-                        <span>{m}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {deliverables.length > 0 && (
-                <div>
-                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Deliverables</span>
-                  <div className="mt-1 flex flex-wrap gap-1.5">
-                    {deliverables.map((d, di) => (
-                      <Badge key={di} variant="secondary" className="text-xs bg-secondary text-secondary-foreground border-border">{d}</Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+    <div className="relative overflow-hidden rounded-xl border-2 border-primary/40 bg-gradient-to-br from-primary/10 via-card to-card p-6">
+      <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+      <div className="flex items-start gap-3 mb-4">
+        <div className="w-10 h-10 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center shrink-0">
+          <FiZap className="w-5 h-5 text-primary" />
+        </div>
+        <div>
+          <h3 className="font-bold text-foreground text-lg">The Hook</h3>
+          {typeof hook?.duration_seconds === 'number' && (
+            <Badge className="mt-1 bg-primary/20 text-primary border-primary/30 text-xs">
+              <FiClock className="w-3 h-3 mr-1" />{hook.duration_seconds}s
+            </Badge>
+          )}
+        </div>
+      </div>
+      {hook?.description && (
+        <p className="text-foreground text-sm leading-relaxed mb-4">{hook.description}</p>
+      )}
+      {hook?.visual_direction && (
+        <div className="mb-3 p-3 bg-secondary/60 rounded-lg border border-border">
+          <div className="flex items-center gap-2 mb-1.5">
+            <FiEye className="w-4 h-4 text-cyan-400" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Visual Direction</span>
           </div>
-        )
-      })}
+          <p className="text-sm text-foreground/90">{hook.visual_direction}</p>
+        </div>
+      )}
+      {hook?.text_overlay && (
+        <div className="p-3 bg-secondary/60 rounded-lg border border-border">
+          <div className="flex items-center gap-2 mb-1.5">
+            <FiType className="w-4 h-4 text-pink-400" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Text Overlay</span>
+          </div>
+          <p className="text-lg font-bold text-foreground tracking-wide">{hook.text_overlay}</p>
+        </div>
+      )}
     </div>
   )
 }
 
-function InnovationReport({ data, onSave, onRefine, saveMessage }: {
-  data: InnovationReportData
-  onSave: () => void
-  onRefine: () => void
-  saveMessage: string
-}) {
-  const solutions = Array.isArray(data?.existing_solutions) ? data.existing_solutions : []
-  const trends = Array.isArray(data?.emerging_trends) ? data.emerging_trends : []
-  const gaps = Array.isArray(data?.identified_gaps) ? data.identified_gaps : []
-  const techStack = Array.isArray(data?.tech_stack) ? data.tech_stack : []
-  const challenges = Array.isArray(data?.key_challenges) ? data.key_challenges : []
-  const roadmap = Array.isArray(data?.implementation_roadmap) ? data.implementation_roadmap : []
-  const focusAreas = Array.isArray(data?.focus_areas) ? data.focus_areas : []
-  const nextSteps = Array.isArray(data?.next_steps) ? data.next_steps : []
-  const noveltyScore = typeof data?.novelty_score === 'number' ? data.novelty_score : 0
-  const feasibilityScore = typeof data?.feasibility_score === 'number' ? data.feasibility_score : 0
+function SceneCard({ scene, isLast }: { scene: SceneData; isLast: boolean }) {
+  return (
+    <div className="relative flex gap-4">
+      {/* Timeline connector */}
+      <div className="flex flex-col items-center">
+        <div className="w-10 h-10 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center text-primary font-bold text-sm shrink-0 z-10">
+          {typeof scene?.scene_number === 'number' ? scene.scene_number : '?'}
+        </div>
+        {!isLast && <div className="w-0.5 flex-1 bg-border min-h-[2rem]" />}
+      </div>
+
+      {/* Scene content */}
+      <div className="flex-1 pb-6">
+        <Card className="bg-secondary/50 border-border hover:border-muted-foreground/30 transition-colors">
+          <CardContent className="p-5">
+            {/* Header */}
+            <div className="flex flex-wrap items-center gap-2 mb-3">
+              <h4 className="font-semibold text-foreground">{scene?.title ?? 'Untitled Scene'}</h4>
+              {typeof scene?.duration_seconds === 'number' && (
+                <Badge variant="outline" className="text-xs border-border text-muted-foreground">
+                  <FiClock className="w-3 h-3 mr-1" />{scene.duration_seconds}s
+                </Badge>
+              )}
+            </div>
+
+            {/* Setting */}
+            {scene?.setting && (
+              <p className="text-sm text-muted-foreground mb-3 italic">{scene.setting}</p>
+            )}
+
+            {/* Details grid */}
+            <div className="space-y-2.5">
+              {scene?.visual_direction && (
+                <div className="flex items-start gap-2.5">
+                  <FiEye className="w-4 h-4 text-cyan-400 mt-0.5 shrink-0" />
+                  <div>
+                    <span className="text-xs font-semibold uppercase tracking-wider text-cyan-400">Visual</span>
+                    <p className="text-sm text-foreground/90 mt-0.5">{scene.visual_direction}</p>
+                  </div>
+                </div>
+              )}
+
+              {scene?.camera_movement && (
+                <div className="flex items-start gap-2.5">
+                  <FiVideo className="w-4 h-4 text-purple-400 mt-0.5 shrink-0" />
+                  <div>
+                    <span className="text-xs font-semibold uppercase tracking-wider text-purple-400">Camera</span>
+                    <p className="text-sm text-foreground/90 mt-0.5">{scene.camera_movement}</p>
+                  </div>
+                </div>
+              )}
+
+              {scene?.lighting && (
+                <div className="flex items-start gap-2.5">
+                  <FiSun className="w-4 h-4 text-yellow-400 mt-0.5 shrink-0" />
+                  <div>
+                    <span className="text-xs font-semibold uppercase tracking-wider text-yellow-400">Lighting</span>
+                    <p className="text-sm text-foreground/90 mt-0.5">{scene.lighting}</p>
+                  </div>
+                </div>
+              )}
+
+              {scene?.voiceover && (
+                <div className="flex items-start gap-2.5">
+                  <FiMic className="w-4 h-4 text-green-400 mt-0.5 shrink-0" />
+                  <div>
+                    <span className="text-xs font-semibold uppercase tracking-wider text-green-400">Voiceover</span>
+                    <p className="text-sm text-foreground/90 mt-0.5 italic">&ldquo;{scene.voiceover}&rdquo;</p>
+                  </div>
+                </div>
+              )}
+
+              {scene?.on_screen_text && (
+                <div className="flex items-start gap-2.5">
+                  <FiType className="w-4 h-4 text-pink-400 mt-0.5 shrink-0" />
+                  <div>
+                    <span className="text-xs font-semibold uppercase tracking-wider text-pink-400">On-Screen Text</span>
+                    <p className="text-sm font-bold text-foreground mt-0.5">{scene.on_screen_text}</p>
+                  </div>
+                </div>
+              )}
+
+              {scene?.transition && (
+                <div className="flex items-center gap-2 pt-2 border-t border-border/50">
+                  <FiArrowRight className="w-3.5 h-3.5 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">Transition: {scene.transition}</span>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
+}
+
+function StoryboardTimeline({ scenes }: { scenes: SceneData[] }) {
+  const safeScenes = Array.isArray(scenes) ? scenes : []
+  if (safeScenes.length === 0) return <p className="text-sm text-muted-foreground">No scenes available.</p>
+
+  return (
+    <div className="space-y-0">
+      {safeScenes.map((scene, idx) => (
+        <SceneCard key={idx} scene={scene} isLast={idx === safeScenes.length - 1} />
+      ))}
+    </div>
+  )
+}
+
+function MusicSoundCard({ data }: { data: MusicSoundData | null }) {
+  if (!data) return null
+  const soundEffects = Array.isArray(data?.sound_effects) ? data.sound_effects : []
 
   return (
     <div className="space-y-4">
-      {/* Report Header */}
+      {/* Tags */}
+      <div className="flex flex-wrap gap-2">
+        {data?.genre && (
+          <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30 text-sm">
+            <FiMusic className="w-3.5 h-3.5 mr-1.5" />{data.genre}
+          </Badge>
+        )}
+        {data?.mood && (
+          <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30 text-sm">{data.mood}</Badge>
+        )}
+        {data?.tempo && (
+          <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 text-sm">
+            <FiActivity className="w-3.5 h-3.5 mr-1.5" />{data.tempo}
+          </Badge>
+        )}
+      </div>
+
+      {/* Sound Effects */}
+      {soundEffects.length > 0 && (
+        <div>
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Sound Effects</h4>
+          <div className="space-y-2">
+            {soundEffects.map((sfx, i) => (
+              <div key={i} className="flex items-start gap-3 p-3 bg-secondary/60 rounded-lg border border-border">
+                <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                  <span className="text-xs font-bold text-primary">{i + 1}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-sm font-medium text-foreground">{sfx?.effect ?? 'Unknown effect'}</span>
+                  {sfx?.timing && (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      <FiClock className="inline w-3 h-3 mr-1" />{sfx.timing}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Energy Curve */}
+      {data?.energy_curve && (
+        <div className="p-4 bg-secondary/60 rounded-lg border border-border">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Energy Curve</h4>
+          <p className="text-sm text-foreground/90 leading-relaxed">{data.energy_curve}</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function CTACard({ data }: { data: CTAData | null }) {
+  if (!data) return null
+
+  return (
+    <div className="space-y-4">
+      {/* Primary CTA */}
+      {data?.primary_cta && (
+        <div className="p-5 bg-gradient-to-r from-primary/15 to-primary/5 rounded-xl border border-primary/30 text-center">
+          <span className="text-xs font-semibold uppercase tracking-wider text-primary mb-2 block">Primary CTA</span>
+          <p className="text-xl font-bold text-foreground">{data.primary_cta}</p>
+        </div>
+      )}
+
+      {/* Secondary CTA */}
+      {data?.secondary_cta && (
+        <div className="p-4 bg-secondary/60 rounded-lg border border-border text-center">
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Secondary CTA</span>
+          <p className="text-sm font-medium text-foreground">{data.secondary_cta}</p>
+        </div>
+      )}
+
+      {/* Details */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {data?.cta_timing && (
+          <div className="p-3 bg-secondary/60 rounded-lg border border-border">
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block mb-1">Timing</span>
+            <p className="text-sm text-foreground">{data.cta_timing}</p>
+          </div>
+        )}
+        {data?.urgency_element && (
+          <div className="p-3 bg-secondary/60 rounded-lg border border-border">
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block mb-1">Urgency</span>
+            <p className="text-sm text-foreground">{data.urgency_element}</p>
+          </div>
+        )}
+        {data?.placement && (
+          <div className="p-3 bg-secondary/60 rounded-lg border border-border">
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block mb-1">Placement</span>
+            <p className="text-sm text-foreground">{data.placement}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function ProductionNotesCard({ data }: { data: ProductionNotesData | null }) {
+  if (!data) return null
+
+  const notes = [
+    { label: 'Budget Range', value: data?.budget_range, color: 'text-green-400' },
+    { label: 'Talent Needed', value: data?.talent_needed, color: 'text-cyan-400' },
+    { label: 'Props & Locations', value: data?.props_and_locations, color: 'text-purple-400' },
+    { label: 'Platform Tips', value: data?.platform_tips, color: 'text-orange-400' },
+    { label: 'Post-Production', value: data?.post_production, color: 'text-pink-400' },
+  ].filter(n => n.value)
+
+  return (
+    <div className="space-y-3">
+      {notes.map((note, i) => (
+        <div key={i} className="p-4 bg-secondary/60 rounded-lg border border-border">
+          <span className={`text-xs font-semibold uppercase tracking-wider ${note.color} block mb-1.5`}>{note.label}</span>
+          <p className="text-sm text-foreground/90 leading-relaxed">{note.value}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function AdConceptDisplay({ data, onSave, onNewBrief, saveMessage }: {
+  data: AdConceptData
+  onSave: () => void
+  onNewBrief: () => void
+  saveMessage: string
+}) {
+  const scenes = Array.isArray(data?.scenes) ? data.scenes : []
+  const hashtags = Array.isArray(data?.hashtag_suggestions) ? data.hashtag_suggestions : []
+  const hook = data?.hook && typeof data.hook === 'object' ? data.hook : null
+  const musicAndSound = data?.music_and_sound && typeof data.music_and_sound === 'object' ? data.music_and_sound : null
+  const callToAction = data?.call_to_action && typeof data.call_to_action === 'object' ? data.call_to_action : null
+  const productionNotes = data?.production_notes && typeof data.production_notes === 'object' ? data.production_notes : null
+
+  return (
+    <div className="space-y-4">
+      {/* Ad Overview Header */}
       <Card className="bg-card border-border overflow-hidden">
-        <div className="h-1 bg-gradient-to-r from-purple-500 via-cyan-400 to-green-400" />
+        <div className="h-1.5 bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-400" />
         <CardContent className="p-6">
-          <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
-            <div>
-              <h2 className="text-xl font-bold text-foreground tracking-tight">{data?.domain_analyzed ?? 'Innovation Report'}</h2>
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {focusAreas.map((area, i) => (
-                  <Badge key={i} className="bg-primary/20 text-primary border-primary/30 text-xs">{area}</Badge>
-                ))}
-              </div>
+          <div className="flex items-start gap-3 mb-4">
+            <div className="w-12 h-12 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center shrink-0">
+              <FiFilm className="w-6 h-6 text-primary" />
             </div>
-            <div className="flex items-center gap-3">
-              <div className="text-center">
-                <div className="text-2xl font-bold" style={{ color: getScoreColor(noveltyScore) }}>{noveltyScore}</div>
-                <div className="text-xs text-muted-foreground">Novelty</div>
-              </div>
-              <Separator orientation="vertical" className="h-10 bg-border" />
-              <div className="text-center">
-                <div className="text-2xl font-bold" style={{ color: getScoreColor(feasibilityScore) }}>{feasibilityScore}</div>
-                <div className="text-xs text-muted-foreground">Feasibility</div>
-              </div>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-xl font-bold text-foreground tracking-tight">{data?.ad_title ?? 'Video Ad Concept'}</h2>
+              {data?.concept_summary && (
+                <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{data.concept_summary}</p>
+              )}
             </div>
+          </div>
+
+          {/* Badges */}
+          <div className="flex flex-wrap gap-2 mb-5">
+            {data?.platform && (
+              <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">{data.platform}</Badge>
+            )}
+            {data?.duration && (
+              <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
+                <FiClock className="w-3 h-3 mr-1" />{data.duration}
+              </Badge>
+            )}
+            {data?.aspect_ratio && (
+              <Badge className="bg-pink-500/20 text-pink-400 border-pink-500/30">{data.aspect_ratio}</Badge>
+            )}
+            {data?.ad_style && (
+              <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">{data.ad_style}</Badge>
+            )}
+            {data?.target_audience && (
+              <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                <FiTarget className="w-3 h-3 mr-1" />{data.target_audience}
+              </Badge>
+            )}
           </div>
 
           {/* Action buttons */}
           <div className="flex flex-wrap items-center gap-3">
             <Button onClick={onSave} variant="outline" className="bg-secondary border-border text-foreground hover:bg-muted">
-              <FiSave className="w-4 h-4 mr-2" />Save Report
+              <FiSave className="w-4 h-4 mr-2" />Save Ad Concept
             </Button>
-            <Button onClick={onRefine} variant="outline" className="bg-secondary border-border text-foreground hover:bg-muted">
-              <FiRefreshCw className="w-4 h-4 mr-2" />Refine Idea
+            <Button onClick={onNewBrief} variant="outline" className="bg-secondary border-border text-foreground hover:bg-muted">
+              <FiRefreshCw className="w-4 h-4 mr-2" />New Brief
             </Button>
+            {data?.full_voiceover_script && (
+              <CopyButton text={data.full_voiceover_script} label="Copy Script" />
+            )}
             {saveMessage && (
               <span className="text-sm text-green-400 flex items-center gap-1">
-                <FiCheckCircle className="w-4 h-4" />{saveMessage}
+                <FiCheck className="w-4 h-4" />{saveMessage}
               </span>
             )}
           </div>
@@ -503,262 +843,157 @@ function InnovationReport({ data, onSave, onRefine, saveMessage }: {
       </Card>
 
       {/* Accordion Sections */}
-      <Accordion type="multiple" defaultValue={['executive-summary', 'scores', 'gaps']} className="space-y-2">
+      <Accordion type="multiple" defaultValue={['hook', 'storyboard', 'music', 'cta']} className="space-y-2">
 
-        {/* 1. Executive Summary */}
-        <AccordionItem value="executive-summary" className="bg-card border border-border rounded-xl overflow-hidden">
+        {/* Hook */}
+        {hook && (
+          <AccordionItem value="hook" className="bg-card border border-border rounded-xl overflow-hidden">
+            <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted/30">
+              <div className="flex items-center gap-3 text-foreground">
+                <FiZap className="w-5 h-5 text-primary" />
+                <span className="font-semibold">The Hook</span>
+                {typeof hook?.duration_seconds === 'number' && (
+                  <Badge variant="secondary" className="bg-secondary text-muted-foreground ml-1">{hook.duration_seconds}s</Badge>
+                )}
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-5 pb-5">
+              <HookCard hook={hook} />
+            </AccordionContent>
+          </AccordionItem>
+        )}
+
+        {/* Storyboard */}
+        <AccordionItem value="storyboard" className="bg-card border border-border rounded-xl overflow-hidden">
           <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted/30">
             <div className="flex items-center gap-3 text-foreground">
-              <FiFileText className="w-5 h-5 text-purple-400" />
-              <span className="font-semibold">Executive Summary</span>
+              <FiLayout className="w-5 h-5 text-cyan-400" />
+              <span className="font-semibold">Scene-by-Scene Storyboard</span>
+              <Badge variant="secondary" className="bg-secondary text-muted-foreground ml-1">{scenes.length} scenes</Badge>
             </div>
           </AccordionTrigger>
           <AccordionContent className="px-5 pb-5">
-            <div className="text-foreground">{renderMarkdown(data?.executive_summary ?? '')}</div>
-            {data?.overall_assessment && (
-              <div className="mt-4 p-4 bg-secondary/50 rounded-lg border border-border">
-                <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
-                  <FiStar className="w-4 h-4 text-yellow-400" />Overall Assessment
-                </h4>
-                <div className="text-foreground">{renderMarkdown(data.overall_assessment)}</div>
-              </div>
-            )}
-            {data?.market_opportunity && (
-              <div className="mt-3 p-4 bg-secondary/50 rounded-lg border border-border">
-                <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
-                  <FiTrendingUp className="w-4 h-4 text-cyan-400" />Market Opportunity
-                </h4>
-                <div className="text-foreground">{renderMarkdown(data.market_opportunity)}</div>
-              </div>
-            )}
+            <StoryboardTimeline scenes={scenes} />
           </AccordionContent>
         </AccordionItem>
 
-        {/* 2. Existing Solutions */}
-        <AccordionItem value="solutions" className="bg-card border border-border rounded-xl overflow-hidden">
-          <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted/30">
-            <div className="flex items-center gap-3 text-foreground">
-              <FiGrid className="w-5 h-5 text-cyan-400" />
-              <span className="font-semibold">Existing Solutions</span>
-              <Badge variant="secondary" className="bg-secondary text-muted-foreground ml-1">{solutions.length}</Badge>
-            </div>
-          </AccordionTrigger>
-          <AccordionContent className="px-5 pb-5">
-            {solutions.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No existing solutions identified.</p>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {solutions.map((sol, i) => (
-                  <div key={i} className="p-4 bg-secondary/50 rounded-lg border border-border hover:border-muted-foreground/30 transition-colors">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <h4 className="font-semibold text-sm text-foreground">{sol?.name ?? 'Unknown'}</h4>
-                      {sol?.category && <Badge variant="outline" className="text-xs border-border text-muted-foreground shrink-0">{sol.category}</Badge>}
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-2">{sol?.description ?? ''}</p>
-                    {sol?.url && (
-                      <a href={sol.url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1">
-                        <FiExternalLink className="w-3 h-3" />{sol.url}
-                      </a>
-                    )}
-                  </div>
+        {/* Music & Sound */}
+        {musicAndSound && (
+          <AccordionItem value="music" className="bg-card border border-border rounded-xl overflow-hidden">
+            <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted/30">
+              <div className="flex items-center gap-3 text-foreground">
+                <FiMusic className="w-5 h-5 text-pink-400" />
+                <span className="font-semibold">Music & Sound Design</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-5 pb-5">
+              <MusicSoundCard data={musicAndSound} />
+            </AccordionContent>
+          </AccordionItem>
+        )}
+
+        {/* Call to Action */}
+        {callToAction && (
+          <AccordionItem value="cta" className="bg-card border border-border rounded-xl overflow-hidden">
+            <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted/30">
+              <div className="flex items-center gap-3 text-foreground">
+                <FiTarget className="w-5 h-5 text-green-400" />
+                <span className="font-semibold">Call to Action Strategy</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-5 pb-5">
+              <CTACard data={callToAction} />
+            </AccordionContent>
+          </AccordionItem>
+        )}
+
+        {/* Production Notes */}
+        {productionNotes && (
+          <AccordionItem value="production" className="bg-card border border-border rounded-xl overflow-hidden">
+            <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted/30">
+              <div className="flex items-center gap-3 text-foreground">
+                <FiFileText className="w-5 h-5 text-orange-400" />
+                <span className="font-semibold">Production Notes</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-5 pb-5">
+              <ProductionNotesCard data={productionNotes} />
+            </AccordionContent>
+          </AccordionItem>
+        )}
+
+        {/* Creative Rationale */}
+        {data?.creative_rationale && (
+          <AccordionItem value="rationale" className="bg-card border border-border rounded-xl overflow-hidden">
+            <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted/30">
+              <div className="flex items-center gap-3 text-foreground">
+                <FiMessageCircle className="w-5 h-5 text-yellow-400" />
+                <span className="font-semibold">Creative Rationale</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-5 pb-5">
+              <div className="p-5 bg-secondary/40 rounded-xl border-l-4 border-primary">
+                <div className="text-foreground">{renderMarkdown(data.creative_rationale)}</div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        )}
+
+        {/* Full Voiceover Script */}
+        {data?.full_voiceover_script && (
+          <AccordionItem value="script" className="bg-card border border-border rounded-xl overflow-hidden">
+            <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted/30">
+              <div className="flex items-center gap-3 text-foreground">
+                <FiMic className="w-5 h-5 text-green-400" />
+                <span className="font-semibold">Full Voiceover Script</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-5 pb-5">
+              <div className="relative">
+                <div className="absolute top-3 right-3 z-10">
+                  <CopyButton text={data.full_voiceover_script} />
+                </div>
+                <pre className="p-5 pr-24 bg-secondary/60 rounded-xl border border-border font-mono text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed overflow-x-auto">
+                  {data.full_voiceover_script}
+                </pre>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        )}
+
+        {/* Hashtag Suggestions */}
+        {hashtags.length > 0 && (
+          <AccordionItem value="hashtags" className="bg-card border border-border rounded-xl overflow-hidden">
+            <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted/30">
+              <div className="flex items-center gap-3 text-foreground">
+                <FiHash className="w-5 h-5 text-cyan-400" />
+                <span className="font-semibold">Hashtag Suggestions</span>
+                <Badge variant="secondary" className="bg-secondary text-muted-foreground ml-1">{hashtags.length}</Badge>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-5 pb-5">
+              <div className="flex flex-wrap gap-2 mb-4">
+                {hashtags.map((tag, i) => (
+                  <Badge key={i} className="bg-primary/15 text-primary border-primary/30 text-sm px-3 py-1.5">
+                    {typeof tag === 'string' && !tag.startsWith('#') ? `#${tag}` : tag}
+                  </Badge>
                 ))}
               </div>
-            )}
-          </AccordionContent>
-        </AccordionItem>
+              <CopyButton
+                text={hashtags.map(t => typeof t === 'string' && !t.startsWith('#') ? `#${t}` : t).join(' ')}
+                label="Copy All Hashtags"
+              />
+            </AccordionContent>
+          </AccordionItem>
+        )}
 
-        {/* 3. Identified Gaps */}
-        <AccordionItem value="gaps" className="bg-card border border-border rounded-xl overflow-hidden">
-          <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted/30">
-            <div className="flex items-center gap-3 text-foreground">
-              <FiTarget className="w-5 h-5 text-pink-400" />
-              <span className="font-semibold">Identified Gaps</span>
-              <Badge variant="secondary" className="bg-secondary text-muted-foreground ml-1">{gaps.length}</Badge>
-            </div>
-          </AccordionTrigger>
-          <AccordionContent className="px-5 pb-5">
-            {gaps.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No gaps identified.</p>
-            ) : (
-              <div className="space-y-3">
-                {gaps.map((gap, i) => (
-                  <div key={i} className="p-4 bg-secondary/50 rounded-lg border border-border">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <h4 className="font-semibold text-sm text-foreground">{gap?.gap ?? 'Unknown Gap'}</h4>
-                      {gap?.difficulty && (
-                        <Badge className={`text-xs border shrink-0 ${getDifficultyColor(gap.difficulty)}`}>{gap.difficulty}</Badge>
-                      )}
-                    </div>
-                    {gap?.opportunity && (
-                      <div className="flex items-start gap-2">
-                        <FiArrowRight className="w-4 h-4 text-green-400 mt-0.5 shrink-0" />
-                        <p className="text-sm text-muted-foreground">{gap.opportunity}</p>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </AccordionContent>
-        </AccordionItem>
-
-        {/* 4. Novelty Score */}
-        <AccordionItem value="scores" className="bg-card border border-border rounded-xl overflow-hidden">
-          <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted/30">
-            <div className="flex items-center gap-3 text-foreground">
-              <FiAward className="w-5 h-5 text-yellow-400" />
-              <span className="font-semibold">Novelty & Feasibility Scores</span>
-            </div>
-          </AccordionTrigger>
-          <AccordionContent className="px-5 pb-5">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <ScoreGauge score={noveltyScore} label="Novelty Score" reasoning={data?.novelty_reasoning ?? ''} />
-              <ScoreGauge score={feasibilityScore} label="Feasibility Score" reasoning={data?.feasibility_reasoning ?? ''} />
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-
-        {/* 5. Emerging Trends */}
-        <AccordionItem value="trends" className="bg-card border border-border rounded-xl overflow-hidden">
-          <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted/30">
-            <div className="flex items-center gap-3 text-foreground">
-              <FiTrendingUp className="w-5 h-5 text-green-400" />
-              <span className="font-semibold">Emerging Trends</span>
-              <Badge variant="secondary" className="bg-secondary text-muted-foreground ml-1">{trends.length}</Badge>
-            </div>
-          </AccordionTrigger>
-          <AccordionContent className="px-5 pb-5">
-            {trends.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No trends identified.</p>
-            ) : (
-              <div className="space-y-3">
-                {trends.map((trend, i) => (
-                  <div key={i} className="p-4 bg-secondary/50 rounded-lg border border-border">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <h4 className="font-semibold text-sm text-foreground">{trend?.trend ?? 'Unknown Trend'}</h4>
-                      {trend?.impact_level && (
-                        <Badge className={`text-xs border shrink-0 ${getImpactColor(trend.impact_level)}`}>{trend.impact_level} Impact</Badge>
-                      )}
-                    </div>
-                    {trend?.evidence && <p className="text-sm text-muted-foreground">{trend.evidence}</p>}
-                  </div>
-                ))}
-              </div>
-            )}
-          </AccordionContent>
-        </AccordionItem>
-
-        {/* 6. Tech Stack Recommendations */}
-        <AccordionItem value="tech-stack" className="bg-card border border-border rounded-xl overflow-hidden">
-          <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted/30">
-            <div className="flex items-center gap-3 text-foreground">
-              <FiLayers className="w-5 h-5 text-orange-400" />
-              <span className="font-semibold">Tech Stack Recommendations</span>
-              <Badge variant="secondary" className="bg-secondary text-muted-foreground ml-1">{techStack.length}</Badge>
-            </div>
-          </AccordionTrigger>
-          <AccordionContent className="px-5 pb-5">
-            {techStack.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No tech stack recommendations.</p>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {techStack.map((tech, i) => (
-                  <div key={i} className="p-4 bg-secondary/50 rounded-lg border border-border">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <h4 className="font-semibold text-sm text-foreground flex items-center gap-2">
-                        <FiCpu className="w-4 h-4 text-primary shrink-0" />{tech?.technology ?? 'Unknown'}
-                      </h4>
-                      {tech?.category && <Badge variant="outline" className="text-xs border-border text-muted-foreground shrink-0">{tech.category}</Badge>}
-                    </div>
-                    {tech?.purpose && <p className="text-sm text-cyan-400 mb-1">{tech.purpose}</p>}
-                    {tech?.justification && <p className="text-sm text-muted-foreground">{tech.justification}</p>}
-                  </div>
-                ))}
-              </div>
-            )}
-          </AccordionContent>
-        </AccordionItem>
-
-        {/* 7. Key Challenges */}
-        <AccordionItem value="challenges" className="bg-card border border-border rounded-xl overflow-hidden">
-          <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted/30">
-            <div className="flex items-center gap-3 text-foreground">
-              <FiAlertTriangle className="w-5 h-5 text-red-400" />
-              <span className="font-semibold">Key Challenges</span>
-              <Badge variant="secondary" className="bg-secondary text-muted-foreground ml-1">{challenges.length}</Badge>
-            </div>
-          </AccordionTrigger>
-          <AccordionContent className="px-5 pb-5">
-            {challenges.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No challenges identified.</p>
-            ) : (
-              <div className="space-y-3">
-                {challenges.map((ch, i) => (
-                  <div key={i} className="p-4 bg-secondary/50 rounded-lg border border-border">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <h4 className="font-semibold text-sm text-foreground">{ch?.challenge ?? 'Unknown Challenge'}</h4>
-                      {ch?.severity && (
-                        <Badge className={`text-xs border shrink-0 ${getSeverityColor(ch.severity)}`}>{ch.severity}</Badge>
-                      )}
-                    </div>
-                    {ch?.mitigation && (
-                      <div className="flex items-start gap-2">
-                        <FiCheckCircle className="w-4 h-4 text-green-400 mt-0.5 shrink-0" />
-                        <p className="text-sm text-muted-foreground"><strong className="text-foreground">Mitigation:</strong> {ch.mitigation}</p>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </AccordionContent>
-        </AccordionItem>
-
-        {/* 8. Implementation Roadmap */}
-        <AccordionItem value="roadmap" className="bg-card border border-border rounded-xl overflow-hidden">
-          <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted/30">
-            <div className="flex items-center gap-3 text-foreground">
-              <FiMap className="w-5 h-5 text-blue-400" />
-              <span className="font-semibold">Implementation Roadmap</span>
-              <Badge variant="secondary" className="bg-secondary text-muted-foreground ml-1">{roadmap.length} phases</Badge>
-            </div>
-          </AccordionTrigger>
-          <AccordionContent className="px-5 pb-5">
-            <RoadmapTimeline phases={roadmap} />
-          </AccordionContent>
-        </AccordionItem>
-
-        {/* 9. Next Steps */}
-        <AccordionItem value="next-steps" className="bg-card border border-border rounded-xl overflow-hidden">
-          <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted/30">
-            <div className="flex items-center gap-3 text-foreground">
-              <FiArrowRight className="w-5 h-5 text-green-400" />
-              <span className="font-semibold">Next Steps</span>
-              <Badge variant="secondary" className="bg-secondary text-muted-foreground ml-1">{nextSteps.length}</Badge>
-            </div>
-          </AccordionTrigger>
-          <AccordionContent className="px-5 pb-5">
-            {nextSteps.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No next steps provided.</p>
-            ) : (
-              <ol className="space-y-3">
-                {nextSteps.map((step, i) => (
-                  <li key={i} className="flex items-start gap-3">
-                    <span className="w-6 h-6 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center text-xs font-bold text-primary shrink-0">{i + 1}</span>
-                    <p className="text-sm text-foreground leading-relaxed">{step}</p>
-                  </li>
-                ))}
-              </ol>
-            )}
-          </AccordionContent>
-        </AccordionItem>
       </Accordion>
     </div>
   )
 }
 
-function HistoryCard({ report, onDelete, onExpand, expanded }: {
-  report: SavedReport
+function SavedAdCard({ ad, onDelete, onExpand, expanded }: {
+  ad: SavedAd
   onDelete: () => void
   onExpand: () => void
   expanded: boolean
@@ -771,40 +1006,45 @@ function HistoryCard({ report, onDelete, onExpand, expanded }: {
         <button onClick={onExpand} className="w-full text-left p-5 hover:bg-muted/20 transition-colors">
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-foreground truncate">{report.domain}</h3>
+              <h3 className="font-semibold text-foreground truncate">{ad.adTitle || ad.productName || 'Untitled Ad'}</h3>
               <div className="flex flex-wrap items-center gap-2 mt-2">
-                {Array.isArray(report.focusTags) && report.focusTags.slice(0, 3).map((tag, i) => (
-                  <Badge key={i} variant="secondary" className="text-xs bg-secondary text-muted-foreground">{tag}</Badge>
-                ))}
+                {ad.platform && (
+                  <Badge className="text-xs bg-purple-500/20 text-purple-400 border-purple-500/30">{ad.platform}</Badge>
+                )}
+                {ad.duration && (
+                  <Badge className="text-xs bg-cyan-500/20 text-cyan-400 border-cyan-500/30">{ad.duration}</Badge>
+                )}
+                {ad.adStyle && (
+                  <Badge className="text-xs bg-orange-500/20 text-orange-400 border-orange-500/30">{ad.adStyle}</Badge>
+                )}
                 <span className="text-xs text-muted-foreground">
                   <FiClock className="inline w-3 h-3 mr-1" />
-                  {new Date(report.createdAt).toLocaleDateString()}
+                  {new Date(ad.createdAt).toLocaleDateString()}
                 </span>
               </div>
-              <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{report.executiveSummary}</p>
+              <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{ad.conceptSummary}</p>
             </div>
-            <div className="flex items-center gap-3 shrink-0">
-              <div className="text-center">
-                <div className="text-lg font-bold" style={{ color: getScoreColor(report.noveltyScore) }}>{report.noveltyScore}</div>
-                <div className="text-xs text-muted-foreground">Novelty</div>
-              </div>
-              <FiChevronRight className={`w-5 h-5 text-muted-foreground transition-transform ${expanded ? 'rotate-90' : ''}`} />
-            </div>
+            <FiChevronRight className={`w-5 h-5 text-muted-foreground transition-transform shrink-0 mt-1 ${expanded ? 'rotate-90' : ''}`} />
           </div>
         </button>
 
         {expanded && (
           <div className="border-t border-border p-5">
-            <InnovationReport data={report.fullReport} onSave={() => {}} onRefine={() => {}} saveMessage="" />
+            <AdConceptDisplay
+              data={ad.fullData}
+              onSave={() => {}}
+              onNewBrief={() => {}}
+              saveMessage=""
+            />
             <div className="mt-4 flex justify-end">
               {confirmDelete ? (
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Delete this report?</span>
+                  <span className="text-sm text-muted-foreground">Delete this ad?</span>
                   <Button size="sm" variant="destructive" onClick={() => { onDelete(); setConfirmDelete(false) }} className="bg-destructive text-white">
-                    Confirm
+                    Yes
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => setConfirmDelete(false)} className="border-border text-foreground">
-                    Cancel
+                    No
                   </Button>
                 </div>
               ) : (
@@ -860,13 +1100,23 @@ class ErrorBoundary extends React.Component<
 
 export default function Page() {
   // Navigation
-  const [activeTab, setActiveTab] = useState<'explore' | 'history'>('explore')
+  const [activeTab, setActiveTab] = useState<'create' | 'myads'>('create')
 
-  // Explore state
-  const [userInput, setUserInput] = useState('')
-  const [selectedTags, setSelectedTags] = useState<string[]>([])
+  // Form state
+  const [formData, setFormData] = useState<FormData>({
+    productName: '',
+    productDescription: '',
+    targetAudience: '',
+    platform: '',
+    adStyle: '',
+    duration: '',
+    additionalNotes: '',
+  })
+  const [validationErrors, setValidationErrors] = useState<Record<string, boolean>>({})
+
+  // Agent state
   const [loading, setLoading] = useState(false)
-  const [reportData, setReportData] = useState<InnovationReportData | null>(null)
+  const [adConcept, setAdConcept] = useState<AdConceptData | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [saveMessage, setSaveMessage] = useState('')
   const [activeAgentId, setActiveAgentId] = useState<string | null>(null)
@@ -875,77 +1125,105 @@ export default function Page() {
   const [showSample, setShowSample] = useState(false)
 
   // History state
-  const [history, setHistory] = useState<SavedReport[]>([])
+  const [savedAds, setSavedAds] = useState<SavedAd[]>([])
   const [historySearch, setHistorySearch] = useState('')
-  const [historySort, setHistorySort] = useState<'date' | 'novelty'>('date')
-  const [expandedHistoryId, setExpandedHistoryId] = useState<string | null>(null)
+  const [historySort, setHistorySort] = useState<'date' | 'platform'>('date')
+  const [expandedAdId, setExpandedAdId] = useState<string | null>(null)
 
   // Refs
-  const inputRef = useRef<HTMLTextAreaElement>(null)
-  const reportRef = useRef<HTMLDivElement>(null)
+  const resultRef = useRef<HTMLDivElement>(null)
 
-  // Load history on mount
+  // Load saved ads on mount
   useEffect(() => {
-    setHistory(loadHistory())
+    setSavedAds(loadSavedAds())
   }, [])
 
-  // Handle sample data toggle
+  // Sample data toggle
   useEffect(() => {
     if (showSample) {
-      setUserInput('AI-powered code review tools for developer teams')
-      setSelectedTags(['AI/ML', 'DevTools', 'Security'])
-      setReportData(SAMPLE_REPORT)
+      setFormData(SAMPLE_FORM)
+      setAdConcept(SAMPLE_AD)
       setError(null)
+      setValidationErrors({})
     } else {
-      setUserInput('')
-      setSelectedTags([])
-      setReportData(null)
+      setFormData({
+        productName: '',
+        productDescription: '',
+        targetAudience: '',
+        platform: '',
+        adStyle: '',
+        duration: '',
+        additionalNotes: '',
+      })
+      setAdConcept(null)
       setError(null)
+      setValidationErrors({})
     }
   }, [showSample])
 
-  const handleTagToggle = useCallback((tag: string) => {
-    setSelectedTags(prev =>
-      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+  const isFormValid = useMemo(() => {
+    return (
+      formData.productName.trim() !== '' &&
+      formData.productDescription.trim() !== '' &&
+      formData.targetAudience.trim() !== '' &&
+      formData.platform !== '' &&
+      formData.adStyle !== '' &&
+      formData.duration !== ''
     )
-  }, [])
+  }, [formData])
 
-  const handleExplore = useCallback(async () => {
-    if (!userInput.trim()) return
+  const validateForm = useCallback((): boolean => {
+    const errors: Record<string, boolean> = {}
+    if (!formData.productName.trim()) errors.productName = true
+    if (!formData.productDescription.trim()) errors.productDescription = true
+    if (!formData.targetAudience.trim()) errors.targetAudience = true
+    if (!formData.platform) errors.platform = true
+    if (!formData.adStyle) errors.adStyle = true
+    if (!formData.duration) errors.duration = true
+    setValidationErrors(errors)
+    return Object.keys(errors).length === 0
+  }, [formData])
+
+  const handleGenerate = useCallback(async () => {
+    if (!validateForm()) return
 
     setLoading(true)
     setError(null)
-    setReportData(null)
-    setActiveAgentId(MANAGER_AGENT_ID)
+    setAdConcept(null)
+    setActiveAgentId(AGENT_ID)
 
     try {
-      const focusTagsStr = selectedTags.length > 0 ? `\n\nFocus areas: ${selectedTags.join(', ')}` : ''
-      const message = `${userInput.trim()}${focusTagsStr}`
+      const message = `Generate a video advertisement concept for the following brief:
 
-      const result = await callAIAgent(message, MANAGER_AGENT_ID)
+Product/Brand: ${formData.productName}
+Product Description: ${formData.productDescription}
+Target Audience: ${formData.targetAudience}
+Platform: ${formData.platform}
+Ad Style: ${formData.adStyle}
+Duration: ${formData.duration}
+${formData.additionalNotes.trim() ? `Additional Notes: ${formData.additionalNotes}` : ''}
+
+Please create a complete, production-ready video ad concept with detailed scenes, visual directions, voiceover script, music/sound design, call-to-action strategy, and production notes.`
+
+      const result = await callAIAgent(message, AGENT_ID)
 
       if (result.success && result.response) {
         let data = result?.response?.result
-        // Try to parse if data is a string
         if (typeof data === 'string') {
-          try {
-            data = JSON.parse(data)
-          } catch {
-            // If it can't be parsed, wrap it
-            data = { executive_summary: data }
+          try { data = JSON.parse(data) } catch {
+            data = { concept_summary: data }
           }
         }
         if (data && typeof data === 'object') {
-          setReportData(data as InnovationReportData)
-          // Auto scroll to report
+          setAdConcept(data as AdConceptData)
           setTimeout(() => {
-            reportRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
           }, 200)
         } else {
           setError('Received an unexpected response format. Please try again.')
         }
       } else {
-        setError(result?.error ?? result?.response?.message ?? 'Failed to generate innovation report. Please try again.')
+        setError(result?.error ?? 'Failed to generate ad concept. Please try again.')
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred.')
@@ -953,67 +1231,85 @@ export default function Page() {
       setLoading(false)
       setActiveAgentId(null)
     }
-  }, [userInput, selectedTags])
+  }, [formData, validateForm])
 
-  const handleSaveReport = useCallback(() => {
-    if (!reportData) return
+  const handleSaveAd = useCallback(() => {
+    if (!adConcept) return
 
-    const saved: SavedReport = {
+    const saved: SavedAd = {
       id: generateId(),
-      domain: reportData?.domain_analyzed ?? userInput.trim().slice(0, 100),
-      focusTags: Array.isArray(reportData?.focus_areas) ? reportData.focus_areas : selectedTags,
-      noveltyScore: typeof reportData?.novelty_score === 'number' ? reportData.novelty_score : 0,
-      feasibilityScore: typeof reportData?.feasibility_score === 'number' ? reportData.feasibility_score : 0,
-      executiveSummary: reportData?.executive_summary ?? '',
-      fullReport: reportData,
+      adTitle: adConcept?.ad_title ?? formData.productName,
+      productName: formData.productName,
+      platform: adConcept?.platform ?? formData.platform,
+      duration: adConcept?.duration ?? formData.duration,
+      adStyle: adConcept?.ad_style ?? formData.adStyle,
+      conceptSummary: adConcept?.concept_summary ?? '',
+      fullData: adConcept,
       createdAt: new Date().toISOString(),
     }
 
-    const updated = [saved, ...history]
-    setHistory(updated)
-    saveHistory(updated)
+    const updated = [saved, ...savedAds]
+    setSavedAds(updated)
+    saveSavedAds(updated)
 
-    setSaveMessage('Report saved successfully!')
+    setSaveMessage('Ad concept saved!')
     setTimeout(() => setSaveMessage(''), 3000)
-  }, [reportData, userInput, selectedTags, history])
+  }, [adConcept, formData, savedAds])
 
-  const handleRefine = useCallback(() => {
-    if (inputRef.current) {
-      inputRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      inputRef.current.focus()
-    }
+  const handleNewBrief = useCallback(() => {
+    setFormData({
+      productName: '',
+      productDescription: '',
+      targetAudience: '',
+      platform: '',
+      adStyle: '',
+      duration: '',
+      additionalNotes: '',
+    })
+    setAdConcept(null)
+    setError(null)
+    setValidationErrors({})
+    setShowSample(false)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [])
 
-  const handleDeleteHistory = useCallback((id: string) => {
-    const updated = history.filter(r => r.id !== id)
-    setHistory(updated)
-    saveHistory(updated)
-    if (expandedHistoryId === id) setExpandedHistoryId(null)
-  }, [history, expandedHistoryId])
+  const handleDeleteAd = useCallback((id: string) => {
+    const updated = savedAds.filter(a => a.id !== id)
+    setSavedAds(updated)
+    saveSavedAds(updated)
+    if (expandedAdId === id) setExpandedAdId(null)
+  }, [savedAds, expandedAdId])
 
   // Filtered and sorted history
-  const filteredHistory = history
-    .filter(r => {
-      if (!historySearch.trim()) return true
-      const q = historySearch.toLowerCase()
-      return (r.domain ?? '').toLowerCase().includes(q) || (r.executiveSummary ?? '').toLowerCase().includes(q)
-    })
-    .sort((a, b) => {
-      if (historySort === 'novelty') return (b.noveltyScore ?? 0) - (a.noveltyScore ?? 0)
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    })
+  const filteredAds = useMemo(() => {
+    return savedAds
+      .filter(ad => {
+        if (!historySearch.trim()) return true
+        const q = historySearch.toLowerCase()
+        return (
+          (ad.adTitle ?? '').toLowerCase().includes(q) ||
+          (ad.productName ?? '').toLowerCase().includes(q) ||
+          (ad.platform ?? '').toLowerCase().includes(q) ||
+          (ad.conceptSummary ?? '').toLowerCase().includes(q)
+        )
+      })
+      .sort((a, b) => {
+        if (historySort === 'platform') return (a.platform ?? '').localeCompare(b.platform ?? '')
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      })
+  }, [savedAds, historySearch, historySort])
 
   return (
     <ErrorBoundary>
       <div style={THEME_VARS} className="min-h-screen bg-background text-foreground font-sans" >
         {/* Navigation Bar */}
         <nav className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center">
-                <FiCpu className="w-5 h-5 text-primary" />
+                <FiFilm className="w-5 h-5 text-primary" />
               </div>
-              <span className="text-lg font-bold tracking-tight text-foreground" style={{ letterSpacing: '-0.01em' }}>TechNova</span>
+              <span className="text-lg font-bold tracking-tight text-foreground" style={{ letterSpacing: '-0.01em' }}>AdVision AI</span>
             </div>
 
             <div className="flex items-center gap-4">
@@ -1029,18 +1325,18 @@ export default function Page() {
 
               <div className="flex bg-secondary rounded-lg p-1">
                 <button
-                  onClick={() => setActiveTab('explore')}
-                  className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${activeTab === 'explore' ? 'bg-primary text-primary-foreground shadow-md shadow-primary/25' : 'text-muted-foreground hover:text-foreground'}`}
+                  onClick={() => setActiveTab('create')}
+                  className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${activeTab === 'create' ? 'bg-primary text-primary-foreground shadow-md shadow-primary/25' : 'text-muted-foreground hover:text-foreground'}`}
                 >
-                  Explore
+                  Create
                 </button>
                 <button
-                  onClick={() => setActiveTab('history')}
-                  className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${activeTab === 'history' ? 'bg-primary text-primary-foreground shadow-md shadow-primary/25' : 'text-muted-foreground hover:text-foreground'}`}
+                  onClick={() => setActiveTab('myads')}
+                  className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${activeTab === 'myads' ? 'bg-primary text-primary-foreground shadow-md shadow-primary/25' : 'text-muted-foreground hover:text-foreground'}`}
                 >
-                  History
-                  {history.length > 0 && (
-                    <span className="ml-1.5 text-xs opacity-75">({history.length})</span>
+                  My Ads
+                  {savedAds.length > 0 && (
+                    <span className="ml-1.5 text-xs opacity-75">({savedAds.length})</span>
                   )}
                 </button>
               </div>
@@ -1048,54 +1344,190 @@ export default function Page() {
           </div>
         </nav>
 
-        <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-          {/* =================== EXPLORE VIEW =================== */}
-          {activeTab === 'explore' && (
+        <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+          {/* =================== CREATE VIEW =================== */}
+          {activeTab === 'create' && (
             <div className="space-y-6">
-              {/* Input Section */}
+              {/* Hero Section */}
+              {!adConcept && !loading && (
+                <div className="text-center py-6">
+                  <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight mb-3" style={{ letterSpacing: '-0.02em' }}>
+                    Generate Video Ad Concepts in Seconds
+                  </h1>
+                  <p className="text-muted-foreground text-base max-w-2xl mx-auto leading-relaxed">
+                    AI-powered creative director that crafts production-ready video advertisement scripts, storyboards, and strategies
+                  </p>
+                </div>
+              )}
+
+              {/* Ad Brief Form */}
               <Card className="bg-card border-border shadow-xl shadow-primary/5">
-                <CardContent className="p-6 space-y-5">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <FiFileText className="w-5 h-5 text-primary" />
+                    Ad Brief
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                  {/* Product Name */}
                   <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                        <FiBookOpen className="w-5 h-5 text-primary" />
-                        Explore Innovation
-                      </h2>
-                      <span className={`text-xs ${userInput.length > 450 ? 'text-destructive' : 'text-muted-foreground'}`}>
-                        {userInput.length}/500
+                    <Label htmlFor="productName" className="text-sm font-medium text-foreground mb-1.5 block">
+                      Product/Brand Name <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="productName"
+                      value={formData.productName}
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, productName: e.target.value }))
+                        setValidationErrors(prev => ({ ...prev, productName: false }))
+                      }}
+                      placeholder="e.g., Nike Air Max, Spotify Premium"
+                      className={`bg-secondary border-border text-foreground placeholder:text-muted-foreground ${validationErrors.productName ? 'border-destructive ring-1 ring-destructive' : ''}`}
+                      disabled={loading}
+                    />
+                    {validationErrors.productName && (
+                      <p className="text-xs text-destructive mt-1">Product name is required</p>
+                    )}
+                  </div>
+
+                  {/* Product Description */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <Label htmlFor="productDescription" className="text-sm font-medium text-foreground">
+                        Product Description <span className="text-destructive">*</span>
+                      </Label>
+                      <span className={`text-xs ${formData.productDescription.length > 450 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                        {formData.productDescription.length}/500
                       </span>
                     </div>
                     <Textarea
-                      ref={inputRef}
-                      value={userInput}
+                      id="productDescription"
+                      value={formData.productDescription}
                       onChange={(e) => {
                         if (e.target.value.length <= 500) {
-                          setUserInput(e.target.value)
+                          setFormData(prev => ({ ...prev, productDescription: e.target.value }))
+                          setValidationErrors(prev => ({ ...prev, productDescription: false }))
                         }
                       }}
-                      placeholder="Describe a technical domain to explore or an idea to validate..."
-                      className="min-h-[120px] bg-secondary border-border text-foreground placeholder:text-muted-foreground resize-none focus:border-primary focus:ring-1 focus:ring-primary"
+                      placeholder="Describe your product, its key features, and unique selling points..."
+                      className={`min-h-[100px] bg-secondary border-border text-foreground placeholder:text-muted-foreground resize-none ${validationErrors.productDescription ? 'border-destructive ring-1 ring-destructive' : ''}`}
+                      disabled={loading}
+                    />
+                    {validationErrors.productDescription && (
+                      <p className="text-xs text-destructive mt-1">Product description is required</p>
+                    )}
+                  </div>
+
+                  {/* Target Audience */}
+                  <div>
+                    <Label htmlFor="targetAudience" className="text-sm font-medium text-foreground mb-1.5 block">
+                      Target Audience <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="targetAudience"
+                      value={formData.targetAudience}
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, targetAudience: e.target.value }))
+                        setValidationErrors(prev => ({ ...prev, targetAudience: false }))
+                      }}
+                      placeholder="e.g., Gen Z fitness enthusiasts, 18-25, urban"
+                      className={`bg-secondary border-border text-foreground placeholder:text-muted-foreground ${validationErrors.targetAudience ? 'border-destructive ring-1 ring-destructive' : ''}`}
+                      disabled={loading}
+                    />
+                    {validationErrors.targetAudience && (
+                      <p className="text-xs text-destructive mt-1">Target audience is required</p>
+                    )}
+                  </div>
+
+                  {/* Platform */}
+                  <div>
+                    <Label className="text-sm font-medium text-foreground mb-2 block">
+                      Platform <span className="text-destructive">*</span>
+                    </Label>
+                    <PlatformSelector
+                      selected={formData.platform}
+                      onSelect={(p) => {
+                        setFormData(prev => ({ ...prev, platform: p }))
+                        setValidationErrors(prev => ({ ...prev, platform: false }))
+                      }}
+                    />
+                    {validationErrors.platform && (
+                      <p className="text-xs text-destructive mt-1">Please select a platform</p>
+                    )}
+                  </div>
+
+                  {/* Ad Style */}
+                  <div>
+                    <Label className="text-sm font-medium text-foreground mb-2 block">
+                      Ad Style <span className="text-destructive">*</span>
+                    </Label>
+                    <StyleSelector
+                      selected={formData.adStyle}
+                      onSelect={(s) => {
+                        setFormData(prev => ({ ...prev, adStyle: s }))
+                        setValidationErrors(prev => ({ ...prev, adStyle: false }))
+                      }}
+                    />
+                    {validationErrors.adStyle && (
+                      <p className="text-xs text-destructive mt-1">Please select an ad style</p>
+                    )}
+                  </div>
+
+                  {/* Duration */}
+                  <div>
+                    <Label className="text-sm font-medium text-foreground mb-2 block">
+                      Ad Duration <span className="text-destructive">*</span>
+                    </Label>
+                    <DurationSelector
+                      selected={formData.duration}
+                      onSelect={(d) => {
+                        setFormData(prev => ({ ...prev, duration: d }))
+                        setValidationErrors(prev => ({ ...prev, duration: false }))
+                      }}
+                    />
+                    {validationErrors.duration && (
+                      <p className="text-xs text-destructive mt-1">Please select a duration</p>
+                    )}
+                  </div>
+
+                  {/* Additional Notes */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <Label htmlFor="additionalNotes" className="text-sm font-medium text-foreground">
+                        Additional Notes <span className="text-muted-foreground text-xs">(optional)</span>
+                      </Label>
+                      <span className={`text-xs ${formData.additionalNotes.length > 270 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                        {formData.additionalNotes.length}/300
+                      </span>
+                    </div>
+                    <Textarea
+                      id="additionalNotes"
+                      value={formData.additionalNotes}
+                      onChange={(e) => {
+                        if (e.target.value.length <= 300) {
+                          setFormData(prev => ({ ...prev, additionalNotes: e.target.value }))
+                        }
+                      }}
+                      placeholder="Any specific requirements, brand guidelines, tone preferences..."
+                      className="min-h-[80px] bg-secondary border-border text-foreground placeholder:text-muted-foreground resize-none"
                       disabled={loading}
                     />
                   </div>
 
-                  <div>
-                    <Label className="text-sm font-medium text-muted-foreground mb-2 block">Focus Tags</Label>
-                    <FocusTagSelector selected={selectedTags} onToggle={handleTagToggle} />
-                  </div>
-
+                  {/* Generate Button */}
                   <Button
-                    onClick={handleExplore}
-                    disabled={loading || !userInput.trim()}
-                    className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/25 transition-all duration-200"
+                    onClick={handleGenerate}
+                    disabled={loading || !isFormValid}
+                    className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/25 transition-all duration-200 text-base py-5 px-8"
+                    size="lg"
                   >
                     {loading ? (
                       <>
-                        <FiActivity className="w-4 h-4 mr-2 animate-spin" />Analyzing...
+                        <FiActivity className="w-5 h-5 mr-2 animate-spin" />Generating Ad Concept...
                       </>
                     ) : (
                       <>
-                        <FiZap className="w-4 h-4 mr-2" />Explore & Validate
+                        <FiZap className="w-5 h-5 mr-2" />Generate Ad Concept
                       </>
                     )}
                   </Button>
@@ -1113,7 +1545,7 @@ export default function Page() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={handleExplore}
+                    onClick={handleGenerate}
                     className="border-destructive/30 text-destructive hover:bg-destructive/10 shrink-0"
                   >
                     <FiRefreshCw className="w-4 h-4 mr-1" />Retry
@@ -1124,37 +1556,24 @@ export default function Page() {
               {/* Loading State */}
               {loading && <SkeletonLoader />}
 
-              {/* Innovation Report */}
-              {reportData && !loading && (
-                <div ref={reportRef}>
-                  <InnovationReport
-                    data={reportData}
-                    onSave={handleSaveReport}
-                    onRefine={handleRefine}
+              {/* Generated Ad Concept */}
+              {adConcept && !loading && (
+                <div ref={resultRef}>
+                  <AdConceptDisplay
+                    data={adConcept}
+                    onSave={handleSaveAd}
+                    onNewBrief={handleNewBrief}
                     saveMessage={saveMessage}
                   />
-                </div>
-              )}
-
-              {/* Empty State */}
-              {!reportData && !loading && !error && !showSample && (
-                <div className="text-center py-16">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-secondary border border-border flex items-center justify-center">
-                    <FiCompass className="w-8 h-8 text-muted-foreground" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">Ready to Explore</h3>
-                  <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                    Enter a technical domain or idea above and TechNova will research existing solutions, identify gaps, and validate your concept with a comprehensive innovation report.
-                  </p>
                 </div>
               )}
             </div>
           )}
 
-          {/* =================== HISTORY VIEW =================== */}
-          {activeTab === 'history' && (
+          {/* =================== MY ADS VIEW =================== */}
+          {activeTab === 'myads' && (
             <div className="space-y-6">
-              {history.length > 0 ? (
+              {savedAds.length > 0 ? (
                 <>
                   {/* Search & Sort */}
                   <div className="flex flex-col sm:flex-row gap-3">
@@ -1163,7 +1582,7 @@ export default function Page() {
                       <Input
                         value={historySearch}
                         onChange={(e) => setHistorySearch(e.target.value)}
-                        placeholder="Search reports..."
+                        placeholder="Search by product name or platform..."
                         className="pl-9 bg-secondary border-border text-foreground placeholder:text-muted-foreground"
                       />
                     </div>
@@ -1172,32 +1591,32 @@ export default function Page() {
                         onClick={() => setHistorySort('date')}
                         className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${historySort === 'date' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
                       >
-                        <FiClock className="inline w-3 h-3 mr-1" />Latest
+                        <FiClock className="inline w-3 h-3 mr-1" />By Date
                       </button>
                       <button
-                        onClick={() => setHistorySort('novelty')}
-                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${historySort === 'novelty' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                        onClick={() => setHistorySort('platform')}
+                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${historySort === 'platform' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
                       >
-                        <FiAward className="inline w-3 h-3 mr-1" />Novelty
+                        <FiMonitor className="inline w-3 h-3 mr-1" />By Platform
                       </button>
                     </div>
                   </div>
 
-                  {/* History Cards */}
+                  {/* Saved Ad Cards */}
                   <div className="space-y-3">
-                    {filteredHistory.length === 0 ? (
+                    {filteredAds.length === 0 ? (
                       <div className="text-center py-12">
                         <FiSearch className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
-                        <p className="text-sm text-muted-foreground">No reports match your search.</p>
+                        <p className="text-sm text-muted-foreground">No ads match your search.</p>
                       </div>
                     ) : (
-                      filteredHistory.map((report) => (
-                        <HistoryCard
-                          key={report.id}
-                          report={report}
-                          expanded={expandedHistoryId === report.id}
-                          onExpand={() => setExpandedHistoryId(expandedHistoryId === report.id ? null : report.id)}
-                          onDelete={() => handleDeleteHistory(report.id)}
+                      filteredAds.map((ad) => (
+                        <SavedAdCard
+                          key={ad.id}
+                          ad={ad}
+                          expanded={expandedAdId === ad.id}
+                          onExpand={() => setExpandedAdId(expandedAdId === ad.id ? null : ad.id)}
+                          onDelete={() => handleDeleteAd(ad.id)}
                         />
                       ))
                     )}
@@ -1206,14 +1625,14 @@ export default function Page() {
               ) : (
                 <div className="text-center py-20">
                   <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-secondary border border-border flex items-center justify-center">
-                    <FiCompass className="w-8 h-8 text-muted-foreground" />
+                    <FiFilm className="w-8 h-8 text-muted-foreground" />
                   </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">Start Your First Exploration!</h3>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">No ad concepts yet</h3>
                   <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6">
-                    Saved innovation reports will appear here. Head over to the Explore tab to research a technical domain.
+                    Create your first video ad concept and it will appear here for future reference.
                   </p>
-                  <Button onClick={() => setActiveTab('explore')} className="bg-primary text-primary-foreground hover:bg-primary/90">
-                    <FiZap className="w-4 h-4 mr-2" />Go to Explore
+                  <Button onClick={() => setActiveTab('create')} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                    <FiZap className="w-4 h-4 mr-2" />Create Your First Ad
                   </Button>
                 </div>
               )}
@@ -1223,28 +1642,14 @@ export default function Page() {
 
         {/* Agent Info Footer */}
         <footer className="border-t border-border bg-card/50 backdrop-blur-sm mt-8">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4">
             <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
               <span className="font-medium text-foreground text-sm">Powered by</span>
               <div className="flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full ${activeAgentId === MANAGER_AGENT_ID ? 'bg-green-400 animate-pulse' : 'bg-muted-foreground/40'}`} />
-                <span>Tech Innovation Manager</span>
+                <span className={`w-2 h-2 rounded-full ${activeAgentId === AGENT_ID ? 'bg-green-400 animate-pulse' : 'bg-muted-foreground/40'}`} />
+                <span>Video Ad Generator Agent</span>
                 <span className="text-muted-foreground/40">|</span>
-                <span className="opacity-60">coordinates research & validation</span>
-              </div>
-              <Separator orientation="vertical" className="h-4 bg-border hidden sm:block" />
-              <div className="flex items-center gap-2 opacity-60">
-                <span className="w-2 h-2 rounded-full bg-muted-foreground/40" />
-                <span>Tech Research Agent</span>
-                <span className="text-muted-foreground/40">|</span>
-                <span>web research sub-agent</span>
-              </div>
-              <Separator orientation="vertical" className="h-4 bg-border hidden sm:block" />
-              <div className="flex items-center gap-2 opacity-60">
-                <span className="w-2 h-2 rounded-full bg-muted-foreground/40" />
-                <span>Idea Validator Agent</span>
-                <span className="text-muted-foreground/40">|</span>
-                <span>feasibility sub-agent</span>
+                <span className="opacity-60">generates production-ready video ad concepts</span>
               </div>
             </div>
           </div>

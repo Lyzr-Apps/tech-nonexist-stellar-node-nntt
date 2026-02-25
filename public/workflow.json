@@ -1,45 +1,24 @@
 {
-  "app_name": "TechNova",
-  "description": "Tech Innovation Explorer and Idea Validator - coordinates research and validation to produce comprehensive Innovation Reports",
-  "architecture_pattern": "manager-subagent",
+  "app_name": "AI Video Advertisement Generator",
+  "description": "AI-powered video advertisement generator that produces comprehensive, production-ready video ad concepts with scene-by-scene scripts, visual directions, music/sound design, and call-to-action strategies.",
+  "architecture": "single-agent",
   "workflow": {
     "nodes": [
-      {"id": "input_node", "type": "Input", "label": "User Query", "nodeCategory": "input"},
-      {"id": "manager_agent", "type": "Agent", "label": "Tech Innovation Manager", "nodeCategory": "agent", "agent_id": "699e8a2fa3d2e42e6173b394"},
-      {"id": "research_agent", "type": "Agent", "label": "Tech Research Agent", "nodeCategory": "agent", "agent_id": "699e8a149496219797ea6bb0"},
-      {"id": "validator_agent", "type": "Agent", "label": "Idea Validator Agent", "nodeCategory": "agent", "agent_id": "699e8a149496219797ea6bb2"},
-      {"id": "output_node", "type": "Output", "label": "Innovation Report", "nodeCategory": "end"}
+      {"id": "input_node", "type": "Input", "label": "Ad Brief", "nodeCategory": "input"},
+      {"id": "generator_agent", "type": "Agent", "label": "Video Ad Generator", "nodeCategory": "agent", "agent_id": "699e8d1dafdc74dd12d77e27"},
+      {"id": "output_node", "type": "Output", "label": "Video Ad Concept", "nodeCategory": "end"}
     ],
     "edges": [
-      {"source": "input_node", "target": "manager_agent"},
-      {"source": "manager_agent", "target": "research_agent"},
-      {"source": "manager_agent", "target": "validator_agent"},
-      {"source": "research_agent", "target": "output_node"},
-      {"source": "validator_agent", "target": "output_node"}
+      {"source": "input_node", "target": "generator_agent"},
+      {"source": "generator_agent", "target": "output_node"}
     ]
   },
   "agents": [
     {
-      "node_id": "manager_agent",
-      "agent_id": "699e8a2fa3d2e42e6173b394",
-      "name": "Tech Innovation Manager",
-      "type": "manager",
-      "provider": "OpenAI",
-      "model": "gpt-4.1"
-    },
-    {
-      "node_id": "research_agent",
-      "agent_id": "699e8a149496219797ea6bb0",
-      "name": "Tech Research Agent",
-      "type": "sub-agent",
-      "provider": "Perplexity",
-      "model": "sonar-pro"
-    },
-    {
-      "node_id": "validator_agent",
-      "agent_id": "699e8a149496219797ea6bb2",
-      "name": "Idea Validator Agent",
-      "type": "sub-agent",
+      "node_id": "generator_agent",
+      "agent_id": "699e8d1dafdc74dd12d77e27",
+      "name": "Video Ad Generator",
+      "type": "single",
       "provider": "OpenAI",
       "model": "gpt-4.1"
     }
